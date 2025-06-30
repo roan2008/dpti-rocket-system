@@ -12,6 +12,7 @@ session_start();
 require_once '../includes/db_connect.php';
 require_once '../includes/user_functions.php';
 require_once '../includes/rocket_functions.php';
+require_once '../includes/production_functions.php';
 
 // Check if user is logged in
 if (!is_logged_in()) {
@@ -32,6 +33,10 @@ if (!$rocket) {
     header('Location: ../dashboard.php?error=rocket_not_found');
     exit;
 }
+
+// Get production steps for this rocket
+$production_steps = getStepsByRocketId($pdo, $rocket_id);
+$step_count = countStepsByRocketId($pdo, $rocket_id);
 
 // Check if user can edit (admin or engineer)
 $can_edit = has_role('admin') || has_role('engineer');
@@ -237,19 +242,99 @@ include '../includes/header.php';
                 </div>
             </div>
             
-            <!-- Future: Production Steps Section -->
+            <!-- Production Steps Section -->
             <div class="detail-section">
-                <h3>Production Steps</h3>
-                <div class="placeholder-content">
-                    <p>Production steps tracking will be implemented in the next development phase.</p>
-                    <div class="coming-soon">
-                        <span class="coming-soon-badge">Coming Soon</span>
-                        <ul>
-                            <li>View production step history</li>
-                            <li>Add new production steps</li>
-                            <li>Track step completion</li>
-                            <li>Approval workflow</li>
-                        </ul>
+                <div class="section-header">
+                    <h3>Production History (<?php echo $step_count; ?> steps)</h3>
+                    <a href="step_add_view.php?rocket_id=<?php echo $rocket_id; ?>" class="btn btn-primary">
+                        Add New Production Step
+                    </a>
+                </div>
+                
+                <?php if (empty($production_steps)): ?>
+                    <div class="empty-state">
+                        <p>No production steps recorded yet.</p>
+                        <p><a href="step_add_view.php?rocket_id=<?php echo $rocket_id; ?>">Add the first production step</a> to start tracking progress.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="steps-container">
+                        <?php foreach ($production_steps as $step): ?>
+                            <div class="step-card">
+                                <div class="step-header">
+                                    <h4 class="step-name"><?php echo htmlspecialchars($step['step_name']); ?></h4>
+                                    <span class="step-timestamp">
+                                        <?php echo date('M j, Y g:i A', strtotime($step['step_timestamp'])); ?>
+                                    </span>
+                                </div>
+                                
+                                <div class="step-content">
+                                    <div class="step-info">
+                                        <span class="step-staff">
+                                            Recorded by: <strong><?php echo htmlspecialchars($step['staff_full_name']); ?></strong>
+                                            (<?php echo htmlspecialchars($step['staff_username']); ?>)
+                                        </span>
+                                    </div>
+                                    
+                                    <?php if (!empty($step['data_json'])): ?>
+                                        <div class="step-data">
+                                            <details>
+                                                <summary>Step Details</summary>
+                                                <div class="json-data">
+                                                    <?php 
+                                                    $step_data = json_decode($step['data_json'], true);
+                                                    if ($step_data): 
+                                                    ?>
+                                                        <table class="data-table">
+                                                            <?php foreach ($step_data as $key => $value): ?>
+                                                                <tr>
+                                                                    <td class="data-key"><?php echo htmlspecialchars($key); ?>:</td>
+                                                                    <td class="data-value"><?php echo htmlspecialchars($value); ?></td>
+                                                                </tr>
+                                                            <?php endforeach; ?>
+                                                        </table>
+                                                    <?php else: ?>
+                                                        <pre><?php echo htmlspecialchars($step['data_json']); ?></pre>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </details>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <?php if (has_role('admin') || has_role('engineer')): ?>
+                                    <div class="step-actions">
+                                        <button onclick="editStep(<?php echo $step['step_id']; ?>)" class="btn-small btn-edit">
+                                            Edit
+                                        </button>
+                                        <?php if (has_role('admin')): ?>
+                                            <button onclick="deleteStep(<?php echo $step['step_id']; ?>)" class="btn-small btn-delete">
+                                                Delete
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+                
+                <!-- Summary Statistics -->
+                <div class="steps-summary">
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                            <label>Total Steps:</label>
+                            <span><?php echo $step_count; ?></span>
+                        </div>
+                        <?php if (!empty($production_steps)): ?>
+                            <div class="stat-item">
+                                <label>Latest Step:</label>
+                                <span><?php echo htmlspecialchars($production_steps[0]['step_name']); ?></span>
+                            </div>
+                            <div class="stat-item">
+                                <label>Last Updated:</label>
+                                <span><?php echo date('M j, Y g:i A', strtotime($production_steps[0]['step_timestamp'])); ?></span>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
