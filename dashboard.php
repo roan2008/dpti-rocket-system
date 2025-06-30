@@ -33,6 +33,56 @@ include 'includes/header.php';
             <a href="controllers/logout_controller.php" class="btn-logout">Logout</a>
         </div>
     </div>
+
+    <!-- Success/Error Messages -->
+    <?php if (isset($_GET['success'])): ?>
+        <div class="message success">
+            <?php
+            switch ($_GET['success']) {
+                case 'rocket_created':
+                    echo "Rocket successfully created!";
+                    if (isset($_GET['rocket_id'])) {
+                        echo " (ID: " . htmlspecialchars($_GET['rocket_id']) . ")";
+                    }
+                    break;
+                case 'rocket_deleted':
+                    echo "Rocket successfully deleted!";
+                    break;
+                case 'status_updated':
+                    echo "Rocket status successfully updated!";
+                    break;
+                default:
+                    echo "Operation completed successfully!";
+            }
+            ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['error'])): ?>
+        <div class="message error">
+            <?php
+            switch ($_GET['error']) {
+                case 'invalid_action':
+                    echo "Invalid action requested.";
+                    break;
+                case 'insufficient_permissions':
+                    echo "You don't have permission to perform this action.";
+                    break;
+                case 'rocket_not_found':
+                    echo "Rocket not found.";
+                    break;
+                case 'delete_failed':
+                    echo "Failed to delete rocket.";
+                    break;
+                case 'status_update_failed':
+                    echo "Failed to update rocket status.";
+                    break;
+                default:
+                    echo "An error occurred. Please try again.";
+            }
+            ?>
+        </div>
+    <?php endif; ?>
     
     <div class="dashboard-stats">
         <div class="stat-card">
