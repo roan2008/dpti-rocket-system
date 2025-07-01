@@ -339,5 +339,200 @@ test: Add comprehensive testing suite
 
 ---
 
-**Last Updated:** June 30, 2025  
-**For Issues:** Check test scripts first, then review error logs
+## 🎯 **Next Development Task: Dynamic Form Enhancement**
+
+### **Current Issue**
+JSON textarea for production step details provides poor user experience. Users need to manually write JSON which is error-prone.
+
+### **Solution: Dynamic JavaScript Forms**
+
+#### **Phase 1: Form Structure Definition**
+```javascript
+// In views/step_add_view.php - Add JavaScript section
+const stepFormStructures = {
+    'Design Review': [
+        {name: 'reviewer_name', label: 'Reviewer Name', type: 'text', required: true},
+        {name: 'design_version', label: 'Design Version', type: 'text', required: true},
+        {name: 'approved', label: 'Approved', type: 'select', options: ['Yes', 'No'], required: true},
+        {name: 'notes', label: 'Review Notes', type: 'textarea', required: false}
+    ],
+    'Material Preparation': [
+        {name: 'material_type', label: 'Material Type', type: 'select', options: ['Aluminum', 'Steel', 'Composite'], required: true},
+        {name: 'quantity', label: 'Quantity', type: 'number', required: true},
+        {name: 'supplier', label: 'Supplier', type: 'text', required: false},
+        {name: 'batch_number', label: 'Batch Number', type: 'text', required: false}
+    ],
+    'Tube Preparation': [
+        {name: 'length_mm', label: 'Length (mm)', type: 'number', required: true},
+        {name: 'diameter_mm', label: 'Diameter (mm)', type: 'number', required: true},
+        {name: 'wall_thickness', label: 'Wall Thickness (mm)', type: 'number', required: true},
+        {name: 'surface_finish', label: 'Surface Finish', type: 'select', options: ['Smooth', 'Textured', 'Polished'], required: true}
+    ]
+    // Add more step types...
+};
+```
+
+#### **Phase 2: Event Listener Implementation**
+```javascript
+// Add to step_add_view.php
+document.addEventListener('DOMContentLoaded', function() {
+    const stepSelect = document.getElementById('step_name');
+    const dynamicFormContainer = document.getElementById('dynamic-form-fields');
+    
+    stepSelect.addEventListener('change', function() {
+        const selectedStep = this.value;
+        generateFormFields(selectedStep);
+    });
+});
+```
+
+#### **Phase 3: Dynamic Form Generation**
+```javascript
+function generateFormFields(stepName) {
+    const container = document.getElementById('dynamic-form-fields');
+    container.innerHTML = ''; // Clear existing fields
+    
+    if (!stepFormStructures[stepName]) {
+        return; // No structure defined for this step
+    }
+    
+    const fields = stepFormStructures[stepName];
+    
+    fields.forEach(field => {
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'form-group';
+        
+        const label = document.createElement('label');
+        label.textContent = field.label + (field.required ? ' *' : '');
+        label.htmlFor = field.name;
+        
+        let input;
+        
+        switch(field.type) {
+            case 'text':
+            case 'number':
+                input = document.createElement('input');
+                input.type = field.type;
+                input.id = field.name;
+                input.name = field.name;
+                input.required = field.required;
+                break;
+                
+            case 'select':
+                input = document.createElement('select');
+                input.id = field.name;
+                input.name = field.name;
+                input.required = field.required;
+                
+                field.options.forEach(option => {
+                    const optionEl = document.createElement('option');
+                    optionEl.value = option;
+                    optionEl.textContent = option;
+                    input.appendChild(optionEl);
+                });
+                break;
+                
+            case 'textarea':
+                input = document.createElement('textarea');
+                input.id = field.name;
+                input.name = field.name;
+                input.required = field.required;
+                break;
+        }
+        
+        fieldDiv.appendChild(label);
+        fieldDiv.appendChild(input);
+        container.appendChild(fieldDiv);
+    });
+}
+```
+
+#### **Phase 4: Form Submission Handler**
+```javascript
+function handleFormSubmission(event) {
+    const form = event.target;
+    const dynamicFields = document.getElementById('dynamic-form-fields');
+    const hiddenInput = document.getElementById('data_json_hidden');
+    
+    // Collect dynamic form data
+    const formData = {};
+    const inputs = dynamicFields.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+        if (input.value.trim() !== '') {
+            formData[input.name] = input.value;
+        }
+    });
+    
+    // Convert to JSON and set hidden field
+    hiddenInput.value = JSON.stringify(formData);
+    
+    return true; // Allow form submission
+}
+```
+
+#### **Phase 5: HTML Structure Updates**
+```html
+<!-- In views/step_add_view.php -->
+<form onsubmit="return handleFormSubmission(event)" method="post" action="../controllers/production_controller.php">
+    <!-- Existing fields -->
+    <select id="step_name" name="step_name" required>
+        <!-- Options -->
+    </select>
+    
+    <!-- New dynamic form container -->
+    <div id="dynamic-form-fields" class="dynamic-fields-container">
+        <!-- Dynamic fields will be generated here -->
+    </div>
+    
+    <!-- Hidden field for JSON data -->
+    <input type="hidden" id="data_json_hidden" name="data_json" value="">
+    
+    <!-- Remove the old textarea -->
+    <!-- <textarea name="data_json">...</textarea> -->
+    
+    <button type="submit">Add Production Step</button>
+</form>
+```
+
+### **Implementation Steps**
+
+1. **Backup Current File:**
+   ```bash
+   cp views/step_add_view.php views/step_add_view.php.backup
+   ```
+
+2. **Update HTML Structure:**
+   - Remove textarea for JSON
+   - Add dynamic form container
+   - Add hidden input for JSON
+
+3. **Add JavaScript Section:**
+   - Define stepFormStructures object
+   - Add event listeners
+   - Implement generateFormFields function
+   - Add form submission handler
+
+4. **Update CSS:**
+   - Style dynamic form fields
+   - Add responsive design for new inputs
+
+5. **Testing Protocol:**
+   - Test each step type dropdown change
+   - Verify dynamic fields generation
+   - Test form submission with JSON creation
+   - Test validation (required fields)
+
+### **Benefits of This Approach**
+
+- **Better UX:** User-friendly forms instead of JSON editing
+- **Error Prevention:** Validation at field level
+- **Consistency:** Standardized data structure per step type
+- **Extensibility:** Easy to add new step types and fields
+- **Professional:** Modern interface that users expect
+
+---
+
+**Last Updated:** July 1, 2025  
+**For Issues:** Check test scripts first, then review error logs  
+**Next Task:** Implement Dynamic Forms for Production Steps

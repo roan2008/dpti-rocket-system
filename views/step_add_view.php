@@ -82,7 +82,7 @@ include '../includes/header.php';
         </div>
     <?php endif; ?>
 
-    <form method="POST" action="../controllers/production_controller.php" class="production-step-form">
+    <form method="POST" action="../controllers/production_controller.php" class="production-step-form" onsubmit="return handleFormSubmission(event)">
         <input type="hidden" name="action" value="add_step">
         <input type="hidden" name="rocket_id" value="<?php echo $rocket_id; ?>">
         
@@ -130,19 +130,15 @@ include '../includes/header.php';
             <small class="field-help">Select the production step being recorded</small>
         </div>
         
-        <div class="form-group">
-            <label for="data_json">Step Details (JSON Format)</label>
-            <textarea 
-                id="data_json" 
-                name="data_json" 
-                rows="8"
-                placeholder='{"component": "Engine nozzle", "quality_check": "Passed", "notes": "All specifications met", "duration_minutes": 45, "temperature_celsius": 22, "humidity_percent": 65}'
-            ><?php echo isset($_GET['data_json']) ? htmlspecialchars($_GET['data_json']) : ''; ?></textarea>
-            <small class="field-help">
-                Optional: Enter additional details in JSON format. 
-                <a href="#" onclick="showJsonExamples(); return false;">View examples</a>
-            </small>
+        <!-- Dynamic Form Fields Container -->
+        <div id="dynamic-form-fields" class="dynamic-fields-container">
+            <div class="form-help">
+                <p>👆 Select a production step above to see relevant fields</p>
+            </div>
         </div>
+        
+        <!-- Hidden field for JSON data -->
+        <input type="hidden" id="data_json_hidden" name="data_json" value="">
         
         <div class="form-actions">
             <button type="submit" class="btn-primary">Record Production Step</button>
@@ -151,61 +147,245 @@ include '../includes/header.php';
     </form>
     
     <div class="form-info">
-        <h4>Guidelines:</h4>
+        <h4>📋 Guidelines:</h4>
         <ul>
-            <li>Select the production step that best describes the work being recorded</li>
-            <li>JSON data is optional but can include details like components, quality checks, notes, etc.</li>
-            <li>The rocket status will be automatically updated based on the step recorded</li>
-            <li>All production steps are timestamped and linked to your user account</li>
+            <li><strong>Select Production Step:</strong> Choose the step that best describes the work being recorded</li>
+            <li><strong>Dynamic Fields:</strong> Relevant input fields will appear based on your step selection</li>
+            <li><strong>Required Fields:</strong> Fields marked with * must be filled for successful submission</li>
+            <li><strong>Auto-Tracking:</strong> All steps are timestamped and linked to your user account</li>
+            <li><strong>Status Updates:</strong> Rocket status will be automatically updated based on the recorded step</li>
         </ul>
-        
-        <div id="json-examples" style="display: none;">
-            <h4>JSON Examples:</h4>
-            <div class="example-section">
-                <h5>Material Preparation:</h5>
-                <pre>{"material_type": "Aluminum", "quantity_kg": 15.5, "supplier": "ACME Materials", "batch_number": "AL-2025-001"}</pre>
-            </div>
-            <div class="example-section">
-                <h5>Quality Check:</h5>
-                <pre>{"test_type": "Pressure test", "result": "Passed", "max_pressure_psi": 1500, "duration_minutes": 30}</pre>
-            </div>
-            <div class="example-section">
-                <h5>Assembly:</h5>
-                <pre>{"components": ["nozzle", "combustion chamber"], "tools_used": "Torque wrench", "torque_nm": 85}</pre>
-            </div>
-        </div>
     </div>
 </div>
 
 <script>
-function showJsonExamples() {
-    var examples = document.getElementById('json-examples');
-    if (examples.style.display === 'none') {
-        examples.style.display = 'block';
-    } else {
-        examples.style.display = 'none';
+// Step Form Structures - Define fields for each production step
+const stepFormStructures = {
+    'Design Review': [
+        {name: 'reviewer_name', label: 'Reviewer Name', type: 'text', required: true, placeholder: 'Engineer John Doe'},
+        {name: 'design_version', label: 'Design Version', type: 'text', required: true, placeholder: 'v2.1'},
+        {name: 'approved', label: 'Approval Status', type: 'select', options: ['Approved', 'Rejected', 'Needs Revision'], required: true},
+        {name: 'review_notes', label: 'Review Notes', type: 'textarea', required: false, placeholder: 'Design meets all requirements...'}
+    ],
+    'Material Preparation': [
+        {name: 'material_type', label: 'Material Type', type: 'select', options: ['Aluminum', 'Steel', 'Composite', 'Titanium'], required: true},
+        {name: 'quantity_kg', label: 'Quantity (kg)', type: 'number', required: true, step: '0.1'},
+        {name: 'supplier', label: 'Supplier', type: 'text', required: false, placeholder: 'ACME Materials Co.'},
+        {name: 'batch_number', label: 'Batch Number', type: 'text', required: false, placeholder: 'AL-2025-001'},
+        {name: 'quality_cert', label: 'Quality Certificate', type: 'text', required: false, placeholder: 'QC-2025-123'}
+    ],
+    'Tube Preparation': [
+        {name: 'length_mm', label: 'Length (mm)', type: 'number', required: true},
+        {name: 'diameter_mm', label: 'Outer Diameter (mm)', type: 'number', required: true, step: '0.1'},
+        {name: 'wall_thickness_mm', label: 'Wall Thickness (mm)', type: 'number', required: true, step: '0.1'},
+        {name: 'surface_finish', label: 'Surface Finish', type: 'select', options: ['Smooth', 'Textured', 'Polished', 'Anodized'], required: true},
+        {name: 'inspection_result', label: 'Inspection Result', type: 'select', options: ['Pass', 'Fail', 'Rework Required'], required: true}
+    ],
+    'Propellant Mixing': [
+        {name: 'propellant_type', label: 'Propellant Type', type: 'select', options: ['APCP', 'HTPB', 'Sugar Propellant', 'Black Powder'], required: true},
+        {name: 'batch_size_kg', label: 'Batch Size (kg)', type: 'number', required: true, step: '0.1'},
+        {name: 'mixing_time_min', label: 'Mixing Time (minutes)', type: 'number', required: true},
+        {name: 'temperature_celsius', label: 'Temperature (°C)', type: 'number', required: true},
+        {name: 'humidity_percent', label: 'Humidity (%)', type: 'number', required: false, step: '0.1'},
+        {name: 'safety_officer', label: 'Safety Officer', type: 'text', required: true}
+    ],
+    'Propellant Casting': [
+        {name: 'cast_weight_kg', label: 'Cast Weight (kg)', type: 'number', required: true, step: '0.01'},
+        {name: 'curing_time_hours', label: 'Curing Time (hours)', type: 'number', required: true},
+        {name: 'curing_temperature', label: 'Curing Temperature (°C)', type: 'number', required: true},
+        {name: 'void_check', label: 'Void Check Result', type: 'select', options: ['No Voids', 'Minor Voids', 'Major Voids'], required: true},
+        {name: 'density_measured', label: 'Density (g/cm³)', type: 'number', required: false, step: '0.001'}
+    ],
+    'Motor Assembly': [
+        {name: 'motor_type', label: 'Motor Type', type: 'select', options: ['Single Stage', 'Multi Stage', 'Booster'], required: true},
+        {name: 'nozzle_type', label: 'Nozzle Type', type: 'text', required: true, placeholder: 'Convergent-Divergent'},
+        {name: 'igniter_type', label: 'Igniter Type', type: 'text', required: true},
+        {name: 'assembly_torque_nm', label: 'Assembly Torque (Nm)', type: 'number', required: true},
+        {name: 'leak_test_result', label: 'Leak Test Result', type: 'select', options: ['Pass', 'Fail'], required: true}
+    ],
+    'Component Assembly': [
+        {name: 'components_list', label: 'Components List', type: 'textarea', required: true, placeholder: 'List main components assembled...'},
+        {name: 'assembly_procedure', label: 'Assembly Procedure ID', type: 'text', required: false, placeholder: 'ASM-PROC-001'},
+        {name: 'tools_used', label: 'Tools Used', type: 'text', required: false, placeholder: 'Torque wrench, Allen keys'},
+        {name: 'fit_check', label: 'Fit Check Result', type: 'select', options: ['Perfect Fit', 'Acceptable', 'Requires Adjustment'], required: true}
+    ],
+    'Quality Check': [
+        {name: 'inspector_name', label: 'Inspector Name', type: 'text', required: true},
+        {name: 'test_type', label: 'Test Type', type: 'select', options: ['Visual Inspection', 'Dimensional Check', 'Pressure Test', 'Weight Check'], required: true},
+        {name: 'test_result', label: 'Test Result', type: 'select', options: ['Pass', 'Fail', 'Conditional Pass'], required: true},
+        {name: 'defects_found', label: 'Defects Found', type: 'textarea', required: false, placeholder: 'List any defects or issues...'},
+        {name: 'corrective_action', label: 'Corrective Action', type: 'textarea', required: false}
+    ],
+    'System Test': [
+        {name: 'test_type', label: 'Test Type', type: 'select', options: ['Static Fire', 'Pressure Test', 'Vibration Test', 'Electrical Test'], required: true},
+        {name: 'test_duration_sec', label: 'Test Duration (seconds)', type: 'number', required: true},
+        {name: 'max_pressure_psi', label: 'Max Pressure (PSI)', type: 'number', required: false},
+        {name: 'test_result', label: 'Test Result', type: 'select', options: ['Pass', 'Fail', 'Partial Success'], required: true},
+        {name: 'data_recorded', label: 'Data Recorded', type: 'text', required: false, placeholder: 'Thrust curve, pressure data, etc.'}
+    ],
+    'Integration Test': [
+        {name: 'integration_type', label: 'Integration Type', type: 'select', options: ['Stage Integration', 'Payload Integration', 'System Integration'], required: true},
+        {name: 'test_sequence', label: 'Test Sequence', type: 'text', required: true, placeholder: 'INT-SEQ-001'},
+        {name: 'communication_test', label: 'Communication Test', type: 'select', options: ['Pass', 'Fail', 'Not Applicable'], required: true},
+        {name: 'separation_test', label: 'Separation Test', type: 'select', options: ['Pass', 'Fail', 'Not Applicable'], required: false},
+        {name: 'overall_result', label: 'Overall Result', type: 'select', options: ['Pass', 'Fail', 'Needs Retest'], required: true}
+    ],
+    'Final Inspection': [
+        {name: 'inspector_name', label: 'Chief Inspector', type: 'text', required: true},
+        {name: 'inspection_checklist', label: 'Checklist ID', type: 'text', required: true, placeholder: 'FINAL-CHK-001'},
+        {name: 'weight_final_kg', label: 'Final Weight (kg)', type: 'number', required: true, step: '0.01'},
+        {name: 'cg_location_mm', label: 'Center of Gravity (mm)', type: 'number', required: false, step: '0.1'},
+        {name: 'flight_readiness', label: 'Flight Readiness', type: 'select', options: ['Ready for Flight', 'Minor Issues', 'Major Issues'], required: true},
+        {name: 'certification_notes', label: 'Certification Notes', type: 'textarea', required: false}
+    ],
+    'Launch Preparation': [
+        {name: 'launch_date', label: 'Planned Launch Date', type: 'date', required: false},
+        {name: 'weather_conditions', label: 'Weather Conditions', type: 'text', required: false, placeholder: 'Clear, wind 5 mph'},
+        {name: 'safety_checklist', label: 'Safety Checklist ID', type: 'text', required: true, placeholder: 'LAUNCH-SAFE-001'},
+        {name: 'range_officer', label: 'Range Safety Officer', type: 'text', required: true},
+        {name: 'prep_status', label: 'Preparation Status', type: 'select', options: ['Complete', 'In Progress', 'Pending'], required: true},
+        {name: 'special_notes', label: 'Special Notes', type: 'textarea', required: false, placeholder: 'Any special considerations...'}
+    ]
+};
+
+// Generate dynamic form fields based on selected step
+function generateFormFields(stepName) {
+    const container = document.getElementById('dynamic-form-fields');
+    container.innerHTML = ''; // Clear existing fields
+    
+    if (!stepName || !stepFormStructures[stepName]) {
+        container.innerHTML = '<div class="form-help"><p>👆 Select a production step above to see relevant fields</p></div>';
+        return;
     }
+    
+    const fields = stepFormStructures[stepName];
+    
+    // Add section header
+    const header = document.createElement('div');
+    header.className = 'dynamic-form-header';
+    header.innerHTML = `<h4>📝 ${stepName} Details</h4><p>Fill in the relevant information for this production step:</p>`;
+    container.appendChild(header);
+    
+    // Generate fields
+    fields.forEach(field => {
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'form-group';
+        
+        const label = document.createElement('label');
+        label.textContent = field.label + (field.required ? ' *' : '');
+        label.htmlFor = 'dynamic_' + field.name;
+        
+        let input;
+        
+        switch(field.type) {
+            case 'text':
+            case 'number':
+            case 'date':
+                input = document.createElement('input');
+                input.type = field.type;
+                input.id = 'dynamic_' + field.name;
+                input.name = 'dynamic_' + field.name;
+                input.required = field.required;
+                if (field.placeholder) input.placeholder = field.placeholder;
+                if (field.step) input.step = field.step;
+                break;
+                
+            case 'select':
+                input = document.createElement('select');
+                input.id = 'dynamic_' + field.name;
+                input.name = 'dynamic_' + field.name;
+                input.required = field.required;
+                
+                // Add empty option for required fields
+                if (field.required) {
+                    const emptyOption = document.createElement('option');
+                    emptyOption.value = '';
+                    emptyOption.textContent = 'Select...';
+                    input.appendChild(emptyOption);
+                }
+                
+                field.options.forEach(option => {
+                    const optionEl = document.createElement('option');
+                    optionEl.value = option;
+                    optionEl.textContent = option;
+                    input.appendChild(optionEl);
+                });
+                break;
+                
+            case 'textarea':
+                input = document.createElement('textarea');
+                input.id = 'dynamic_' + field.name;
+                input.name = 'dynamic_' + field.name;
+                input.required = field.required;
+                input.rows = 3;
+                if (field.placeholder) input.placeholder = field.placeholder;
+                break;
+        }
+        
+        input.className = 'form-control';
+        
+        fieldDiv.appendChild(label);
+        fieldDiv.appendChild(input);
+        container.appendChild(fieldDiv);
+    });
+    
+    // Add info section
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'form-info';
+    infoDiv.innerHTML = '<small>💡 All fields marked with * are required. Additional details help track production progress.</small>';
+    container.appendChild(infoDiv);
 }
 
-// Validate JSON format on input
-document.getElementById('data_json').addEventListener('blur', function() {
-    var jsonText = this.value.trim();
-    if (jsonText === '') return; // Empty is valid
+// Handle form submission - collect dynamic fields and create JSON
+function handleFormSubmission(event) {
+    const form = event.target;
+    const dynamicFields = document.getElementById('dynamic-form-fields');
+    const hiddenInput = document.getElementById('data_json_hidden');
+    const stepSelect = document.getElementById('step_name');
     
-    try {
-        JSON.parse(jsonText);
-        this.style.borderColor = '#28a745';
-        this.style.backgroundColor = '#f8fff8';
-    } catch (e) {
-        this.style.borderColor = '#dc3545';
-        this.style.backgroundColor = '#fff8f8';
+    // Check if step is selected
+    if (!stepSelect.value) {
+        alert('Please select a production step.');
+        return false;
     }
-});
+    
+    // Collect dynamic form data
+    const formData = {};
+    const inputs = dynamicFields.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+        if (input.value.trim() !== '') {
+            // Remove 'dynamic_' prefix from field names
+            const fieldName = input.name.replace('dynamic_', '');
+            formData[fieldName] = input.value.trim();
+        }
+    });
+    
+    // Add step name and timestamp
+    formData.step_name = stepSelect.value;
+    formData.recorded_at = new Date().toISOString();
+    
+    // Convert to JSON and set hidden field
+    hiddenInput.value = JSON.stringify(formData);
+    
+    console.log('Form data collected:', formData); // Debug
+    
+    return true; // Allow form submission
+}
 
-// Reset validation styling on focus
-document.getElementById('data_json').addEventListener('focus', function() {
-    this.style.borderColor = '';
-    this.style.backgroundColor = '';
+// Event listener for step selection change
+document.addEventListener('DOMContentLoaded', function() {
+    const stepSelect = document.getElementById('step_name');
+    
+    stepSelect.addEventListener('change', function() {
+        const selectedStep = this.value;
+        generateFormFields(selectedStep);
+    });
+    
+    // If there's a pre-selected step, generate its fields
+    if (stepSelect.value) {
+        generateFormFields(stepSelect.value);
+    }
 });
 </script>
 
