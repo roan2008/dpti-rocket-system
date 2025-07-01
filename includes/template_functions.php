@@ -8,6 +8,11 @@
  * Functions:
  * - getAllActiveTemplates($pdo): Get all active step templates
  * - getTemplateWithFields($pdo, $template_id): Get template with all its fields
+ * - createTemplate($pdo, $step_name, $step_description, $created_by): Create a new template
+ * - updateTemplate($pdo, $template_id, $step_name, $step_description): Update an existing template
+ * - deleteTemplate($pdo, $template_id): Delete a template
+ * - updateTemplateStatus($pdo, $template_id, $is_active): Update template status (active/inactive)
+ * - getAllTemplates($pdo): Get all templates (including inactive ones)
  * 
  * @version 1.0
  * @date July 1, 2025
@@ -243,6 +248,141 @@ function templateNameExists($pdo, $step_name, $exclude_template_id = null) {
     } catch (PDOException $e) {
         error_log("Error in templateNameExists(): " . $e->getMessage());
         return true; // Return true on error to be safe (assume name exists)
+    }
+}
+
+/**
+ * Create a new template
+ * 
+ * Creates a new step template in the database.
+ * 
+ * @param PDO $pdo Database connection object
+ * @param string $step_name The name of the step
+ * @param string $step_description The description of the step
+ * @param int $created_by User ID of the creator
+ * @return int|false Template ID if successful, false on failure
+ */
+function createTemplate($pdo, $step_name, $step_description, $created_by) {
+    try {
+        $sql = "INSERT INTO step_templates (step_name, step_description, is_active, created_by) VALUES (?, ?, 1, ?)";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$step_name, $step_description, $created_by]);
+        
+        return $pdo->lastInsertId();
+        
+    } catch (PDOException $e) {
+        error_log("Error in createTemplate(): " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Update an existing template
+ * 
+ * Updates the name and description of an existing template.
+ * 
+ * @param PDO $pdo Database connection object
+ * @param int $template_id The template ID to update
+ * @param string $step_name The new step name
+ * @param string $step_description The new step description
+ * @return bool True if successful, false on failure
+ */
+function updateTemplate($pdo, $template_id, $step_name, $step_description) {
+    try {
+        $sql = "UPDATE step_templates SET step_name = ?, step_description = ? WHERE template_id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$step_name, $step_description, $template_id]);
+        
+        return $stmt->rowCount() > 0;
+        
+    } catch (PDOException $e) {
+        error_log("Error in updateTemplate(): " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Delete a template
+ * 
+ * Deletes a template and all its associated fields (CASCADE DELETE).
+ * 
+ * @param PDO $pdo Database connection object
+ * @param int $template_id The template ID to delete
+ * @return bool True if successful, false on failure
+ */
+function deleteTemplate($pdo, $template_id) {
+    try {
+        $sql = "DELETE FROM step_templates WHERE template_id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$template_id]);
+        
+        return $stmt->rowCount() > 0;
+        
+    } catch (PDOException $e) {
+        error_log("Error in deleteTemplate(): " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Update template status (active/inactive)
+ * 
+ * Updates the is_active status of a template.
+ * 
+ * @param PDO $pdo Database connection object
+ * @param int $template_id The template ID to update
+ * @param bool $is_active New active status
+ * @return bool True if successful, false on failure
+ */
+function updateTemplateStatus($pdo, $template_id, $is_active) {
+    try {
+        $sql = "UPDATE step_templates SET is_active = ? WHERE template_id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([(int) $is_active, $template_id]);
+        
+        return $stmt->rowCount() > 0;
+        
+    } catch (PDOException $e) {
+        error_log("Error in updateTemplateStatus(): " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Get all templates (including inactive ones)
+ * 
+ * Retrieves all templates regardless of status, useful for admin views.
+ * 
+ * @param PDO $pdo Database connection object
+ * @return array Array of all template objects
+ */
+function getAllTemplates($pdo) {
+    try {
+        $sql = "SELECT 
+                    template_id, 
+                    step_name, 
+                    step_description, 
+                    is_active, 
+                    created_by, 
+                    created_at 
+                FROM step_templates 
+                ORDER BY step_name ASC";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+        
+        $templates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Convert is_active to boolean
+        foreach ($templates as &$template) {
+            $template['is_active'] = (bool) $template['is_active'];
+        }
+        
+        return $templates;
+        
+    } catch (PDOException $e) {
+        error_log("Error in getAllTemplates(): " . $e->getMessage());
+        return [];
     }
 }
 
