@@ -4,8 +4,10 @@
  * Displays all step templates for admin and engineer users
  */
 
-// Start session and check authentication
-session_start();
+// Start session only if not already active
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Include required files
 require_once '../includes/user_functions.php';
@@ -42,13 +44,14 @@ function getUserName($pdo, $user_id) {
 include '../includes/header.php';
 ?>
 
+<div class="container">
 <div class="dashboard-container">
     <div class="dashboard-header">
         <h1>Step Template Management</h1>
         <div class="user-info">
             <p>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</p>
             <p>Role: <?php echo htmlspecialchars($_SESSION['role']); ?></p>
-            <a href="../controllers/logout_controller.php" class="btn-logout">Logout</a>
+            <a href="../controllers/logout_controller.php" class="btn btn-secondary">Logout</a>
         </div>
     </div>
 
@@ -132,7 +135,7 @@ include '../includes/header.php';
         <?php if (!empty($templates)): ?>
             <div class="section-content">
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table-modern">
                         <thead>
                             <tr>
                                 <th>Template ID</th>
@@ -251,6 +254,7 @@ include '../includes/header.php';
         </div>
     </div>
 </div>
+<!-- End container -->
 
 <script>
 function confirmDeleteTemplate(templateId, templateName) {

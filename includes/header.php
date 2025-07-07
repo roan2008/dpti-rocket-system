@@ -1,5 +1,8 @@
 <?php
-session_start();
+// Only start session if one isn't already active
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -9,27 +12,31 @@ session_start();
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>DPTI Rocket System</title>
     <link rel="stylesheet" href="/dpti-rocket-system/assets/css/style.css">
+    <link rel="stylesheet" href="/dpti-rocket-system/assets/css/design-system-improvements.css">
 </head>
 <body>
     <!-- Navigation Bar -->
     <?php if (isset($_SESSION['user_id']) && is_logged_in()): ?>
         <nav class="main-nav">
             <div class="nav-container">
+                <!-- Brand/Logo -->
                 <div class="nav-left">
                     <a href="/dpti-rocket-system/dashboard.php" class="nav-brand">
                         🚀 DPTI Rocket System
                     </a>
                 </div>
                 
+                <!-- Primary Navigation -->
                 <div class="nav-center">
                     <a href="/dpti-rocket-system/dashboard.php" class="nav-link">Dashboard</a>
-                    <a href="/dpti-rocket-system/views/production_steps_view.php" class="nav-link">Production Steps</a>
+                    <a href="/dpti-rocket-system/views/production_steps_view.php" class="nav-link">Production</a>
                     
                     <?php if (has_role('engineer') || has_role('admin')): ?>
+                        <a href="/dpti-rocket-system/views/templates_list_view.php" class="nav-link">Templates</a>
                         <a href="/dpti-rocket-system/controllers/approval_controller.php?action=list_pending" class="nav-link nav-link-primary">
-                            📋 Approvals
+                            Approvals
                             <?php
-                            // Show pending count in navigation
+                            // Show pending count badge
                             require_once __DIR__ . '/approval_functions.php';
                             require_once __DIR__ . '/db_connect.php';
                             $approval_stats = getApprovalStatistics($pdo);
@@ -45,12 +52,17 @@ session_start();
                     <?php endif; ?>
                 </div>
                 
+                <!-- User Context (SINGLE HOME for user info) -->
                 <div class="nav-right">
-                    <span class="nav-user">
-                        <?php echo htmlspecialchars($_SESSION['username']); ?> 
-                        (<?php echo htmlspecialchars($_SESSION['role']); ?>)
-                    </span>
-                    <a href="/dpti-rocket-system/controllers/logout_controller.php" class="nav-link nav-logout">Logout</a>
+                    <?php if (isset($_SESSION['username']) && isset($_SESSION['role'])): ?>
+                        <div class="nav-user-info">
+                            <span class="nav-user-name"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
+                            <span class="nav-user-role"><?php echo htmlspecialchars($_SESSION['role']); ?></span>
+                        </div>
+                    <?php endif; ?>
+                    <a href="/dpti-rocket-system/controllers/logout_controller.php" class="nav-logout">
+                        Logout
+                    </a>
                 </div>
             </div>
         </nav>

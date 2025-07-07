@@ -4,8 +4,10 @@
  * Shows comprehensive list of production steps across all rockets
  */
 
-// Start session and check authentication
-session_start();
+// Start session only if not already active
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Include required files
 require_once '../includes/user_functions.php';

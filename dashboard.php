@@ -3,8 +3,10 @@
  * Dashboard - Main application page
  */
 
-// Start session first
-session_start();
+// Start session only if not already active
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Include required files
 require_once 'includes/db_connect.php';
@@ -24,13 +26,24 @@ $rocket_count = count_rockets($pdo);
 include 'includes/header.php';
 ?>
 
-<div class="dashboard-container">
-    <div class="dashboard-header">
-        <h1>DPTI Rocket System Dashboard</h1>
-        <div class="user-info">
-            <p>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</p>
-            <p>Role: <?php echo htmlspecialchars($_SESSION['role']); ?></p>
-            <a href="controllers/logout_controller.php" class="btn-logout">Logout</a>
+<div class="container">
+    <!-- GOLDEN RULE #2: Consistent Page Header -->
+    <div class="page-header">
+        <div class="page-header-content">
+            <div class="page-title-section">
+                <h1>DPTI Rocket System Dashboard</h1>
+                <p class="page-description">Monitor and manage your rocket production pipeline</p>
+            </div>
+            <div class="page-actions">
+                <a href="views/rocket_add_view.php" class="btn btn-primary">
+                    <span>🚀</span> Add New Rocket
+                </a>
+                <?php if (has_role('engineer') || has_role('admin')): ?>
+                    <a href="controllers/approval_controller.php?action=list_pending" class="btn btn-secondary">
+                        <span>📋</span> Review Approvals
+                    </a>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
@@ -84,91 +97,67 @@ include 'includes/header.php';
         </div>
     <?php endif; ?>
     
-    <div class="dashboard-stats">
+    <!-- GOLDEN RULE #1: Single Home for Global Statistics -->
+    <div class="stats-grid">
         <div class="stat-card">
-            <h3><?php echo $rocket_count; ?></h3>
-            <p>Total Rockets</p>
+            <div class="stat-icon">🚀</div>
+            <div class="stat-content">
+                <div class="stat-number"><?php echo $rocket_count; ?></div>
+                <div class="stat-label">Total Rockets</div>
+            </div>
         </div>
         <div class="stat-card">
-            <h3><?php echo count(array_filter($rockets, function($r) { return $r['current_status'] === 'In Production'; })); ?></h3>
-            <p>In Production</p>
+            <div class="stat-icon">⚙️</div>
+            <div class="stat-content">
+                <div class="stat-number"><?php echo count(array_filter($rockets, function($r) { return $r['current_status'] === 'In Production'; })); ?></div>
+                <div class="stat-label">In Production</div>
+            </div>
         </div>
         <div class="stat-card">
-            <h3><?php echo count(array_filter($rockets, function($r) { return $r['current_status'] === 'Completed'; })); ?></h3>
-            <p>Completed</p>
+            <div class="stat-icon">✅</div>
+            <div class="stat-content">
+                <div class="stat-number"><?php echo count(array_filter($rockets, function($r) { return $r['current_status'] === 'Completed'; })); ?></div>
+                <div class="stat-label">Completed</div>
+            </div>
         </div>
-    </div>
-    
-    <div class="dashboard-content">
-        <!-- Approval Workflow Section (Engineers and Admins Only) -->
         <?php if (has_role('engineer') || has_role('admin')): ?>
-            <div class="approvals-section">
-                <div class="section-header">
-                    <h2>Approval Workflow</h2>
-                    <div class="approval-actions">
-                        <a href="controllers/approval_controller.php?action=list_pending" class="btn-primary">
-                            📋 Review Pending Approvals
-                        </a>
-                        <a href="views/production_steps_view.php" class="btn-secondary">
-                            📊 View All Production Steps
-                        </a>
-                    </div>
-                </div>
-                
-                <div class="approval-summary">
-                    <?php
-                    // Get quick approval statistics for dashboard
-                    require_once 'includes/approval_functions.php';
-                    $approval_stats = getApprovalStatistics($pdo);
-                    $pending_count = $approval_stats['pending_count'] ?? 0;
-                    $approved_count = $approval_stats['approved_count'] ?? 0;
-                    $rejected_count = $approval_stats['rejected_count'] ?? 0;
-                    ?>
-                    
-                    <div class="approval-stats">
-                        <div class="stat-card pending">
-                            <div class="stat-number"><?php echo $pending_count; ?></div>
-                            <div class="stat-label">Pending Review</div>
-                        </div>
-                        <div class="stat-card approved">
-                            <div class="stat-number"><?php echo $approved_count; ?></div>
-                            <div class="stat-label">Approved</div>
-                        </div>
-                        <div class="stat-card rejected">
-                            <div class="stat-number"><?php echo $rejected_count; ?></div>
-                            <div class="stat-label">Rejected</div>
-                        </div>
-                    </div>
-                    
-                    <?php if ($pending_count > 0): ?>
-                        <div class="approval-alert">
-                            <strong>⚠️ Action Required:</strong> 
-                            <?php echo $pending_count; ?> production step<?php echo $pending_count === 1 ? '' : 's'; ?> 
-                            <?php echo $pending_count === 1 ? 'needs' : 'need'; ?> your approval review.
-                        </div>
-                    <?php else: ?>
-                        <div class="approval-success">
-                            <strong>✅ All Caught Up:</strong> 
-                            No production steps are currently pending approval.
-                        </div>
-                    <?php endif; ?>
+            <?php
+            // Get approval statistics for engineers/admins
+            require_once 'includes/approval_functions.php';
+            $approval_stats = getApprovalStatistics($pdo);
+            $pending_count = $approval_stats['pending_count'] ?? 0;
+            ?>
+            <div class="stat-card <?php echo $pending_count > 0 ? 'stat-card-alert' : ''; ?>">
+                <div class="stat-icon">📋</div>
+                <div class="stat-content">
+                    <div class="stat-number"><?php echo $pending_count; ?></div>
+                    <div class="stat-label">Pending Approvals</div>
                 </div>
             </div>
         <?php endif; ?>
-        
-        <div class="rockets-section">
-            <div class="section-header">
+    </div>
+
+    <!-- Main Content: Focus on Primary Data -->
+    <div class="main-content-area">
+        <!-- Primary Content: Rockets Overview -->
+        <div class="content-card">
+            <div class="card-header">
                 <h2>Rockets Overview</h2>
-                <a href="views/rocket_add_view.php" class="btn-primary">Add New Rocket</a>
+                <div class="card-actions">
+                    <span class="card-subtitle"><?php echo count($rockets); ?> rockets in system</span>
+                </div>
             </div>
             
             <?php if (empty($rockets)): ?>
                 <div class="empty-state">
-                    <p>No rockets found. <a href="views/rocket_add_view.php">Add the first rocket</a> to get started.</p>
+                    <div class="empty-state-icon">🚀</div>
+                    <h3>No rockets found</h3>
+                    <p>Get started by adding your first rocket to the system.</p>
+                    <a href="views/rocket_add_view.php" class="btn btn-primary">Add First Rocket</a>
                 </div>
             <?php else: ?>
-                <div class="table-container">
-                    <table class="rockets-table">
+                <div class="table-responsive">
+                    <table class="table-modern">
                         <thead>
                             <tr>
                                 <th>Serial Number</th>
@@ -182,25 +171,27 @@ include 'includes/header.php';
                             <?php foreach ($rockets as $rocket): ?>
                                 <tr>
                                     <td class="serial-number">
-                                        <?php echo htmlspecialchars($rocket['serial_number']); ?>
+                                        <span class="font-mono font-semibold"><?php echo htmlspecialchars($rocket['serial_number']); ?></span>
                                     </td>
                                     <td class="project-name">
-                                        <?php echo htmlspecialchars($rocket['project_name']); ?>
+                                        <span class="font-medium"><?php echo htmlspecialchars($rocket['project_name']); ?></span>
                                     </td>
                                     <td class="status">
-                                        <span class="status-badge status-<?php echo strtolower(str_replace(' ', '-', $rocket['current_status'])); ?>">
+                                        <span class="status-badge-modern status-<?php echo strtolower(str_replace(' ', '-', $rocket['current_status'])); ?>">
                                             <?php echo htmlspecialchars($rocket['current_status']); ?>
                                         </span>
                                     </td>
                                     <td class="created-date">
-                                        <?php echo date('M j, Y', strtotime($rocket['created_at'])); ?>
+                                        <span class="text-gray-600"><?php echo date('M j, Y', strtotime($rocket['created_at'])); ?></span>
                                     </td>
                                     <td class="actions">
-                                        <a href="views/rocket_detail_view.php?id=<?php echo $rocket['rocket_id']; ?>" class="btn-small btn-view">View</a>
-                                        <a href="views/production_steps_view.php?rocket_id=<?php echo $rocket['rocket_id']; ?>" class="btn-small btn-steps">Steps</a>
-                                        <?php if (has_role('admin') || has_role('engineer')): ?>
-                                            <a href="views/rocket_edit_view.php?id=<?php echo $rocket['rocket_id']; ?>" class="btn-small btn-edit">Edit</a>
-                                        <?php endif; ?>
+                                        <div class="action-buttons">
+                                            <a href="views/rocket_detail_view.php?id=<?php echo $rocket['rocket_id']; ?>" class="btn btn-sm btn-secondary">View</a>
+                                            <a href="views/production_steps_view.php?rocket_id=<?php echo $rocket['rocket_id']; ?>" class="btn btn-sm btn-secondary">Steps</a>
+                                            <?php if (has_role('admin') || has_role('engineer')): ?>
+                                                <a href="views/rocket_edit_view.php?id=<?php echo $rocket['rocket_id']; ?>" class="btn btn-sm btn-secondary">Edit</a>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -209,116 +200,43 @@ include 'includes/header.php';
                 </div>
             <?php endif; ?>
         </div>
-        
-        <div class="dashboard-grid">
-            <div class="dashboard-card">
-                <h3>Production Steps</h3>
-                <p>Track production progress</p>
-                <a href="views/production_steps_view.php" class="btn-primary">View All Steps</a>
+
+        <!-- Quick Actions Section (Replacing redundant navigation cards) -->
+        <?php if (has_role('engineer') || has_role('admin')): ?>
+            <div class="quick-actions-grid">
+                <div class="quick-action-card">
+                    <div class="quick-action-icon">📊</div>
+                    <div class="quick-action-content">
+                        <h3>Production Steps</h3>
+                        <p>View and manage production progress</p>
+                        <a href="views/production_steps_view.php" class="btn btn-sm btn-secondary">View Steps</a>
+                    </div>
+                </div>
+                
+                <div class="quick-action-card">
+                    <div class="quick-action-icon">📋</div>
+                    <div class="quick-action-content">
+                        <h3>Step Templates</h3>
+                        <p>Create and manage production templates</p>
+                        <a href="views/templates_list_view.php" class="btn btn-sm btn-secondary">Manage Templates</a>
+                    </div>
+                </div>
+                
+                <?php if (has_role('admin')): ?>
+                    <div class="quick-action-card">
+                        <div class="quick-action-icon">👥</div>
+                        <div class="quick-action-content">
+                            <h3>User Management</h3>
+                            <p>Manage system users and permissions</p>
+                            <a href="views/user_management_view.php" class="btn btn-sm btn-secondary">Manage Users</a>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
-            
-            <?php if (has_role('engineer') || has_role('admin')): ?>
-            <div class="dashboard-card">
-                <h3>Template Management</h3>
-                <p>Create and manage step templates</p>
-                <a href="views/templates_list_view.php" class="btn-primary">Manage Templates</a>
-            </div>
-            
-            <div class="dashboard-card">
-                <h3>Approvals</h3>
-                <p>Review and approve production steps</p>
-                <a href="views/approvals_view.php" class="btn-primary">View Approvals</a>
-            </div>
-            <?php endif; ?>
-            
-            <?php if (has_role('admin')): ?>
-            <div class="dashboard-card">
-                <h3>User Management</h3>
-                <p>Manage system users</p>
-                <a href="views/user_management_view.php" class="btn-primary">Manage Users</a>
-            </div>
-            <?php endif; ?>
-        </div>
+        <?php endif; ?>
     </div>
 </div>
-
-<style>
-/* Approval Workflow Section Styling */
-.approvals-section {
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 30px;
-}
-
-.approvals-section .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.approval-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.approval-stats {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 15px;
-}
-
-.stat-card {
-    background: white;
-    border-radius: 6px;
-    padding: 15px 20px;
-    text-align: center;
-    min-width: 100px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.stat-card.pending {
-    border-left: 4px solid #ffc107;
-}
-
-.stat-card.approved {
-    border-left: 4px solid #28a745;
-}
-
-.stat-card.rejected {
-    border-left: 4px solid #dc3545;
-}
-
-.stat-number {
-    font-size: 24px;
-    font-weight: bold;
-    color: #2c3e50;
-    margin-bottom: 5px;
-}
-
-.stat-label {
-    font-size: 12px;
-    color: #6c757d;
-    text-transform: uppercase;
-}
-
-.approval-alert {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    border-radius: 4px;
-    padding: 10px 15px;
-    color: #856404;
-}
-
-.approval-success {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    border-radius: 4px;
-    padding: 10px 15px;
-    color: #155724;
-}
-</style>
+<!-- End container -->
+<!-- End container -->
 
 <?php include 'includes/footer.php'; ?>

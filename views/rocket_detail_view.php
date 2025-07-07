@@ -5,8 +5,10 @@
  * Allow editing for authorized users
  */
 
-// Start session and check authentication
-session_start();
+// Start session only if not already active
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Include required files
 require_once '../includes/db_connect.php';
@@ -47,6 +49,7 @@ $edit_mode = isset($_GET['edit']) && $_GET['edit'] === '1' && $can_edit;
 include '../includes/header.php';
 ?>
 
+<div class="container">
 <div class="detail-container">
     <div class="detail-header">
         <div class="header-left">
@@ -235,7 +238,7 @@ include '../includes/header.php';
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
-                                <button type="submit" class="btn btn-small btn-primary">Update</button>
+                                <button type="submit" class="btn btn-sm btn-primary">Update</button>
                             </div>
                         </div>
                     </form>
@@ -341,6 +344,7 @@ include '../includes/header.php';
         <?php endif; ?>
     </div>
 </div>
+<!-- End container -->
 
 <!-- Delete Confirmation Modal (for admins only) -->
 <?php if (has_role('admin')): ?>
