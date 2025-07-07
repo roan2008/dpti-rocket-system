@@ -100,6 +100,62 @@ include 'includes/header.php';
     </div>
     
     <div class="dashboard-content">
+        <!-- Approval Workflow Section (Engineers and Admins Only) -->
+        <?php if (has_role('engineer') || has_role('admin')): ?>
+            <div class="approvals-section">
+                <div class="section-header">
+                    <h2>Approval Workflow</h2>
+                    <div class="approval-actions">
+                        <a href="controllers/approval_controller.php?action=list_pending" class="btn-primary">
+                            📋 Review Pending Approvals
+                        </a>
+                        <a href="views/production_steps_view.php" class="btn-secondary">
+                            📊 View All Production Steps
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="approval-summary">
+                    <?php
+                    // Get quick approval statistics for dashboard
+                    require_once 'includes/approval_functions.php';
+                    $approval_stats = getApprovalStatistics($pdo);
+                    $pending_count = $approval_stats['pending_count'] ?? 0;
+                    $approved_count = $approval_stats['approved_count'] ?? 0;
+                    $rejected_count = $approval_stats['rejected_count'] ?? 0;
+                    ?>
+                    
+                    <div class="approval-stats">
+                        <div class="stat-card pending">
+                            <div class="stat-number"><?php echo $pending_count; ?></div>
+                            <div class="stat-label">Pending Review</div>
+                        </div>
+                        <div class="stat-card approved">
+                            <div class="stat-number"><?php echo $approved_count; ?></div>
+                            <div class="stat-label">Approved</div>
+                        </div>
+                        <div class="stat-card rejected">
+                            <div class="stat-number"><?php echo $rejected_count; ?></div>
+                            <div class="stat-label">Rejected</div>
+                        </div>
+                    </div>
+                    
+                    <?php if ($pending_count > 0): ?>
+                        <div class="approval-alert">
+                            <strong>⚠️ Action Required:</strong> 
+                            <?php echo $pending_count; ?> production step<?php echo $pending_count === 1 ? '' : 's'; ?> 
+                            <?php echo $pending_count === 1 ? 'needs' : 'need'; ?> your approval review.
+                        </div>
+                    <?php else: ?>
+                        <div class="approval-success">
+                            <strong>✅ All Caught Up:</strong> 
+                            No production steps are currently pending approval.
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+        
         <div class="rockets-section">
             <div class="section-header">
                 <h2>Rockets Overview</h2>
@@ -185,5 +241,84 @@ include 'includes/header.php';
         </div>
     </div>
 </div>
+
+<style>
+/* Approval Workflow Section Styling */
+.approvals-section {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.approvals-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.approval-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.approval-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 6px;
+    padding: 15px 20px;
+    text-align: center;
+    min-width: 100px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-card.pending {
+    border-left: 4px solid #ffc107;
+}
+
+.stat-card.approved {
+    border-left: 4px solid #28a745;
+}
+
+.stat-card.rejected {
+    border-left: 4px solid #dc3545;
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #6c757d;
+    text-transform: uppercase;
+}
+
+.approval-alert {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 10px 15px;
+    color: #856404;
+}
+
+.approval-success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    padding: 10px 15px;
+    color: #155724;
+}
+</style>
 
 <?php include 'includes/footer.php'; ?>

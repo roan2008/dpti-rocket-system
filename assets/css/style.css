@@ -14,9 +14,105 @@ body {
     background-color: #f4f4f4;
 }
 
-/* Layout Styles */
+/* Navigation Bar Styles */
+.main-nav {
+    background: #2c3e50;
+    color: white;
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    height: 60px;
+}
+
+.nav-brand {
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-brand:hover {
+    color: #3498db;
+}
+
+.nav-center {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.nav-link:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.nav-link-primary {
+    background-color: #3498db;
+}
+
+.nav-link-primary:hover {
+    background-color: #2980b9;
+}
+
+.nav-badge {
+    background: #e74c3c;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: bold;
+    min-width: 18px;
+    text-align: center;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.nav-user {
+    font-size: 14px;
+    color: #bdc3c7;
+}
+
+.nav-logout {
+    background-color: #e74c3c;
+    padding: 6px 12px;
+}
+
+.nav-logout:hover {
+    background-color: #c0392b;
+}
+
+/* Adjust main content for navigation */
 .main-content {
-    min-height: calc(100vh - 100px);
+    min-height: calc(100vh - 160px);
     padding: 20px;
 }
 
