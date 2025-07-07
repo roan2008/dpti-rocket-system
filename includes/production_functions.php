@@ -295,4 +295,39 @@ function createStepJsonData($step_name, $additional_data = array()) {
     
     return json_encode($full_data, JSON_PRETTY_PRINT);
 }
+
+/**
+ * Get all production steps across all rockets
+ * 
+ * @param PDO $pdo Database connection
+ * @return array Array of all production steps with staff and rocket information
+ */
+function getAllProductionSteps($pdo) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT 
+                ps.step_id,
+                ps.rocket_id,
+                ps.step_name,
+                ps.data_json,
+                ps.staff_id,
+                ps.step_timestamp,
+                u.full_name as staff_full_name,
+                u.username as staff_username,
+                r.serial_number as rocket_serial,
+                r.project_name as rocket_project
+            FROM production_steps ps
+            INNER JOIN users u ON ps.staff_id = u.user_id
+            INNER JOIN rockets r ON ps.rocket_id = r.rocket_id
+            ORDER BY ps.step_timestamp DESC
+        ");
+        
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+    } catch (PDOException $e) {
+        error_log("Get all production steps error: " . $e->getMessage());
+        return array();
+    }
+}
 ?>

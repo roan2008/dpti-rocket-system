@@ -63,7 +63,7 @@ include '../includes/header.php';
         </div>
         <div class="header-actions">
             <?php if (has_role('admin') || has_role('engineer')): ?>
-                <a href="template_add_view.php" class="btn btn-primary">Add New Template</a>
+                <a href="template_form_view.php" class="btn btn-primary">Add New Template</a>
             <?php endif; ?>
         </div>
     </div>
@@ -176,7 +176,7 @@ include '../includes/header.php';
                                         <div class="btn-group">
                                             <a href="template_view.php?id=<?php echo $template['template_id']; ?>" class="btn btn-sm btn-secondary">View</a>
                                             <?php if (has_role('admin') || has_role('engineer')): ?>
-                                                <a href="template_edit_view.php?id=<?php echo $template['template_id']; ?>" class="btn btn-sm btn-secondary">Edit</a>
+                                                <a href="template_form_view.php?id=<?php echo $template['template_id']; ?>" class="btn btn-sm btn-secondary">Edit</a>
                                             <?php endif; ?>
                                             <?php if (has_role('admin')): ?>
                                                 <button onclick="confirmDeleteTemplate(<?php echo $template['template_id']; ?>, '<?php echo htmlspecialchars(addslashes($template['step_name'])); ?>')" class="btn btn-sm btn-outline-danger">Delete</button>
@@ -194,7 +194,7 @@ include '../includes/header.php';
                 <h3>No step templates found</h3>
                 <p>Get started by creating your first step template to standardize your production processes.</p>
                 <?php if (has_role('admin') || has_role('engineer')): ?>
-                    <a href="template_add_view.php" class="btn btn-primary">Create Your First Template</a>
+                    <a href="template_form_view.php" class="btn btn-primary">Create Your First Template</a>
                 <?php endif; ?>
             </div>
         <?php endif; ?>

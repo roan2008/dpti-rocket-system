@@ -163,6 +163,12 @@ include 'includes/header.php';
             
             <?php if (has_role('engineer') || has_role('admin')): ?>
             <div class="dashboard-card">
+                <h3>Template Management</h3>
+                <p>Create and manage step templates</p>
+                <a href="views/templates_list_view.php" class="btn-primary">Manage Templates</a>
+            </div>
+            
+            <div class="dashboard-card">
                 <h3>Approvals</h3>
                 <p>Review and approve production steps</p>
                 <a href="views/approvals_view.php" class="btn-primary">View Approvals</a>

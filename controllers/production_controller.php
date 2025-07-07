@@ -55,57 +55,50 @@ function handle_add_step() {
     
     // Get and validate form data
     $rocket_id = (int) ($_POST['rocket_id'] ?? 0);
-    $step_name = trim($_POST['step_name'] ?? '');
+    $template_id = trim($_POST['step_name'] ?? ''); // This is actually template_id now
     $data_json = trim($_POST['data_json'] ?? '');
     $staff_id = $_SESSION['user_id'] ?? 0;
     
     // Validate required fields
-    if ($rocket_id <= 0 || empty($step_name) || $staff_id <= 0) {
-        redirect_with_error('missing_fields', $rocket_id, $step_name, $data_json);
+    if ($rocket_id <= 0 || empty($template_id) || $staff_id <= 0) {
+        redirect_with_error('missing_fields', $rocket_id, $template_id, $data_json);
         return;
     }
     
     // Verify rocket exists
     $rocket = get_rocket_by_id($pdo, $rocket_id);
     if (!$rocket) {
-        redirect_with_error('invalid_rocket', $rocket_id, $step_name, $data_json);
+        redirect_with_error('invalid_rocket', $rocket_id, $template_id, $data_json);
         return;
     }
+    
+    // Include template functions for validation
+    require_once '../includes/template_functions.php';
+    
+    // Validate template exists and is active
+    $template_data = getTemplateWithFields($pdo, $template_id);
+    if (!$template_data || !$template_data['is_active']) {
+        redirect_with_error('invalid_template', $rocket_id, $template_id, $data_json);
+        return;
+    }
+    
+    // Get the actual step name from template
+    $step_name = $template_data['step_name'];
     
     // Validate JSON data if provided
     if (!empty($data_json)) {
         $validated_json = validateStepJsonData($data_json);
         if ($validated_json === false) {
-            redirect_with_error('invalid_json', $rocket_id, $step_name, $data_json);
+            redirect_with_error('invalid_json', $rocket_id, $template_id, $data_json);
             return;
         }
     } else {
         // Create default JSON data if none provided
         $data_json = createStepJsonData($step_name, [
+            'template_id' => $template_id,
             'recorded_by' => $_SESSION['username'],
             'status' => 'completed'
         ]);
-    }
-    
-    // Validate step name (must be from predefined list)
-    $valid_steps = [
-        'Design Review',
-        'Material Preparation', 
-        'Tube Preparation',
-        'Propellant Mixing',
-        'Propellant Casting',
-        'Motor Assembly',
-        'Component Assembly',
-        'Quality Check',
-        'System Test',
-        'Integration Test',
-        'Final Inspection',
-        'Launch Preparation'
-    ];
-    
-    if (!in_array($step_name, $valid_steps)) {
-        redirect_with_error('invalid_step_name', $rocket_id, $step_name, $data_json);
-        return;
     }
     
     // Add the production step

@@ -175,9 +175,9 @@ function validateTemplateField($field_data) {
         if (empty($field_data['options_json'])) {
             $errors[] = "Select fields must have options defined";
         } else {
-            $options = json_decode($field_data['options_json'], true);
-            if (json_last_error() !== JSON_ERROR_NONE || !is_array($options) || empty($options)) {
-                $errors[] = "Select field options must be a valid non-empty JSON array";
+            $validation_result = validateSelectFieldOptions($field_data['options_json']);
+            if (!$validation_result['valid']) {
+                $errors = array_merge($errors, $validation_result['errors']);
             }
         }
     }
@@ -190,6 +190,175 @@ function validateTemplateField($field_data) {
     return [
         'valid' => empty($errors),
         'errors' => $errors
+    ];
+}
+
+/**
+ * Validate select field options JSON structure
+ * 
+ * Validates that the options_json for select fields contains a proper array of strings.
+ * Performs comprehensive validation including JSON syntax, structure, and content.
+ * 
+ * @param string $options_json The JSON string containing select options
+ * @return array Array with 'valid' boolean and 'errors' array
+ */
+function validateSelectFieldOptions($options_json) {
+    $errors = [];
+    
+    // Check if options_json is provided
+    if (empty($options_json)) {
+        $errors[] = "Select field options cannot be empty";
+        return ['valid' => false, 'errors' => $errors];
+    }
+    
+    // Validate JSON syntax
+    $options = json_decode($options_json, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        $errors[] = "Invalid JSON syntax in options: " . json_last_error_msg();
+        return ['valid' => false, 'errors' => $errors];
+    }
+    
+    // Check if it's an array
+    if (!is_array($options)) {
+        $errors[] = "Select field options must be a JSON array, not " . gettype($options);
+        return ['valid' => false, 'errors' => $errors];
+    }
+    
+    // Check if array is not empty
+    if (empty($options)) {
+        $errors[] = "Select field options array cannot be empty";
+        return ['valid' => false, 'errors' => $errors];
+    }
+    
+    // Check if it's an indexed array (not associative array from JSON object)
+    if (array_keys($options) !== range(0, count($options) - 1)) {
+        $errors[] = "Select field options must be a JSON array, not a JSON object";
+        return ['valid' => false, 'errors' => $errors];
+    }
+    
+    // Check if array has too many options (reasonable limit)
+    if (count($options) > 50) {
+        $errors[] = "Select field cannot have more than 50 options (found " . count($options) . ")";
+        return ['valid' => false, 'errors' => $errors];
+    }
+    
+    // Validate each option
+    $seen_options = [];
+    foreach ($options as $index => $option) {
+        // Check if option is a string
+        if (!is_string($option)) {
+            $errors[] = "Option at index $index must be a string, not " . gettype($option);
+            continue;
+        }
+        
+        // Check if option is not empty
+        if (trim($option) === '') {
+            $errors[] = "Option at index $index cannot be empty or contain only whitespace";
+            continue;
+        }
+        
+        // Check option length (reasonable limit)
+        if (strlen($option) > 100) {
+            $errors[] = "Option at index $index is too long (max 100 characters)";
+            continue;
+        }
+        
+        // Check for duplicates (case-insensitive)
+        $option_lower = strtolower(trim($option));
+        if (in_array($option_lower, $seen_options)) {
+            $errors[] = "Duplicate option found: '$option' (options must be unique)";
+            continue;
+        }
+        $seen_options[] = $option_lower;
+    }
+    
+    // Additional validation for common patterns
+    $has_useful_options = false;
+    foreach ($options as $option) {
+        if (strlen(trim($option)) >= 2) {
+            $has_useful_options = true;
+            break;
+        }
+    }
+    
+    if (!$has_useful_options) {
+        $errors[] = "Select field must have at least one meaningful option (2+ characters)";
+    }
+    
+    return [
+        'valid' => empty($errors),
+        'errors' => $errors
+    ];
+}
+
+/**
+ * Enhanced JSON validation with structural checks
+ * 
+ * Provides comprehensive JSON validation with detailed error reporting
+ * and structural validation for different data types.
+ * 
+ * @param string $json_string The JSON string to validate
+ * @param string $expected_type Expected type: 'array', 'object', 'string_array', etc.
+ * @return array Array with validation results and detailed errors
+ */
+function validateJsonStructure($json_string, $expected_type = 'array') {
+    $errors = [];
+    
+    // Basic JSON syntax validation
+    if (empty($json_string)) {
+        $errors[] = "JSON string cannot be empty";
+        return ['valid' => false, 'errors' => $errors, 'data' => null];
+    }
+    
+    $decoded = json_decode($json_string, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        $errors[] = "Invalid JSON syntax: " . json_last_error_msg();
+        return ['valid' => false, 'errors' => $errors, 'data' => null];
+    }
+    
+    // Type-specific validation
+    switch ($expected_type) {
+        case 'array':
+            if (!is_array($decoded)) {
+                $errors[] = "Expected JSON array, got " . gettype($decoded);
+            } elseif (empty($decoded)) {
+                $errors[] = "JSON array cannot be empty";
+            }
+            break;
+            
+        case 'string_array':
+            if (!is_array($decoded)) {
+                $errors[] = "Expected JSON array, got " . gettype($decoded);
+            } elseif (empty($decoded)) {
+                $errors[] = "JSON array cannot be empty";
+            } else {
+                foreach ($decoded as $index => $item) {
+                    if (!is_string($item)) {
+                        $errors[] = "Array item at index $index must be a string, got " . gettype($item);
+                    }
+                }
+            }
+            break;
+            
+        case 'object':
+            if (!is_array($decoded) || array_keys($decoded) === range(0, count($decoded) - 1)) {
+                $errors[] = "Expected JSON object, got " . (is_array($decoded) ? 'indexed array' : gettype($decoded));
+            }
+            break;
+            
+        case 'non_empty_array':
+            if (!is_array($decoded)) {
+                $errors[] = "Expected JSON array, got " . gettype($decoded);
+            } elseif (empty($decoded)) {
+                $errors[] = "JSON array cannot be empty";
+            }
+            break;
+    }
+    
+    return [
+        'valid' => empty($errors),
+        'errors' => $errors,
+        'data' => $decoded
     ];
 }
 
