@@ -131,10 +131,6 @@ include '../includes/header.php';
                                             class="btn btn-primary btn-small">
                                         Review & Approve
                                     </button>
-                                    <a href="../views/step_detail_view.php?id=<?php echo $step['step_id']; ?>" 
-                                       class="btn btn-secondary btn-small">
-                                        View Details
-                                    </a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
