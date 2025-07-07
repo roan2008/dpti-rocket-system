@@ -4,8 +4,10 @@
  * Handles all approval workflow operations
  */
 
-// Start session first
-session_start();
+// Start session only if not already active
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Include required files
 require_once '../includes/db_connect.php';

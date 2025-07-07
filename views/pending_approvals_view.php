@@ -4,6 +4,36 @@
  * Display all production steps awaiting approval (Engineer/Admin only)
  */
 
+// Start session only if not already active
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Include required files
+require_once '../includes/user_functions.php';
+require_once '../includes/db_connect.php';
+require_once '../includes/approval_functions.php';
+
+// Check if user is logged in
+if (!is_logged_in()) {
+    header('Location: login_view.php');
+    exit;
+}
+
+// Check if user has permission (engineer or admin only)
+if (!has_role('engineer') && !has_role('admin')) {
+    header('Location: ../dashboard.php?error=insufficient_permissions');
+    exit;
+}
+
+// Get approval statistics and pending approvals (only if not already loaded by controller)
+if (!isset($approval_stats)) {
+    $approval_stats = getApprovalStatistics($pdo);
+}
+if (!isset($pending_approvals)) {
+    $pending_approvals = getPendingApprovals($pdo);
+}
+
 // Include header
 include '../includes/header.php';
 ?>
