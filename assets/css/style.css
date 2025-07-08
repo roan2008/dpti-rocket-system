@@ -2445,3 +2445,173 @@ textarea.json-invalid {
 .modal[style*="flex"] .modal-content {
     animation: modalSlideIn 0.3s ease-out;
 }
+
+/* ==============================================
+   PAGE HEADER IMPROVEMENTS
+   ============================================== */
+
+/* Modern Page Header Layout */
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: white;
+    padding: 24px 32px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f3f4;
+    gap: 24px;
+}
+
+.header-left {
+    flex: 1;
+    min-width: 0;
+}
+
+.header-left h1 {
+    margin: 0 0 8px 0;
+    color: #495057;
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.breadcrumb {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.breadcrumb a {
+    color: #007bff;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Page Actions Container */
+.page-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.page-actions .btn {
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.page-actions .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ==============================================
+   SECTION HEADER IMPROVEMENTS
+   ============================================== */
+
+/* Modern Section Header */
+.section-header-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 20px 24px;
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 12px 12px 0 0;
+    gap: 16px;
+}
+
+.section-title {
+    flex: 1;
+    min-width: 0;
+}
+
+.section-title h3 {
+    margin: 0 0 4px 0;
+    color: #495057;
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.section-subtitle {
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-weight: 400;
+    margin: 0;
+}
+
+.section-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.section-actions .btn {
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+/* Icons for better visual hierarchy */
+.icon-delete::before {
+    content: "🗑️";
+}
+
+.icon-plus::before {
+    content: "➕";
+}
+
+/* Responsive Design for New Layout */
+@media (max-width: 768px) {
+    .detail-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+    
+    .page-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+    
+    .page-actions .btn {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
+    
+    .section-header-modern {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .section-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .section-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+}

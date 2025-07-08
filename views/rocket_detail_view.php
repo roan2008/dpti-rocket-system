@@ -59,17 +59,23 @@ include '../includes/header.php';
                 <span><?php echo htmlspecialchars($rocket['serial_number']); ?></span>
             </p>
         </div>
-        <div class="header-actions">
-            <?php if (!$edit_mode && $can_edit): ?>
-                <a href="?id=<?php echo $rocket_id; ?>&edit=1" class="btn btn-primary">Edit Rocket</a>
-            <?php endif; ?>
-            
-            <?php if ($edit_mode): ?>
+        <div class="page-actions">
+            <?php if (!$edit_mode): ?>
+                <button onclick="openStatusUpdateModal()" class="btn btn-primary">
+                    <i class="icon-edit"></i> Manual Status Update
+                </button>
+                <?php if ($can_edit): ?>
+                    <a href="?id=<?php echo $rocket_id; ?>&edit=1" class="btn btn-secondary">
+                        <i class="icon-settings"></i> Edit Rocket
+                    </a>
+                <?php endif; ?>
+                <?php if (has_role('admin')): ?>
+                    <button onclick="confirmDelete()" class="btn btn-danger">
+                        <i class="icon-delete"></i> Delete Rocket
+                    </button>
+                <?php endif; ?>
+            <?php else: ?>
                 <a href="?id=<?php echo $rocket_id; ?>" class="btn btn-secondary">Cancel Edit</a>
-            <?php endif; ?>
-            
-            <?php if (has_role('admin')): ?>
-                <button onclick="confirmDelete()" class="btn btn-danger">Delete Rocket</button>
             <?php endif; ?>
         </div>
     </div>
@@ -242,28 +248,20 @@ include '../includes/header.php';
                         </div>
                     </div>
                 </div>
-                
-                <!-- Quick Actions with Audit Trail -->
-                <div class="detail-section">
-                    <h3>Quick Actions</h3>
-                    <div class="action-buttons-left">
-                        <button onclick="openStatusUpdateModal()" class="btn btn-primary btn-lg">
-                            <i class="icon-edit"></i> Manual Status Update
-                        </button>
-                        <p class="action-description">
-                            Update rocket status with audit trail logging
-                        </p>
-                    </div>
-                </div>
             </div>
             
             <!-- Production Steps Section -->
             <div class="detail-section">
-                <div class="section-header">
-                    <h3>Production History (<?php echo $step_count; ?> steps)</h3>
-                    <a href="step_add_view.php?rocket_id=<?php echo $rocket_id; ?>" class="btn btn-primary">
-                        Add New Production Step
-                    </a>
+                <div class="section-header-modern">
+                    <div class="section-title">
+                        <h3>Production History</h3>
+                        <span class="section-subtitle"><?php echo $step_count; ?> steps recorded</span>
+                    </div>
+                    <div class="section-actions">
+                        <a href="step_add_view.php?rocket_id=<?php echo $rocket_id; ?>" class="btn btn-primary">
+                            <i class="icon-plus"></i> Add New Production Step
+                        </a>
+                    </div>
                 </div>
                 
                 <?php if (empty($production_steps)): ?>
