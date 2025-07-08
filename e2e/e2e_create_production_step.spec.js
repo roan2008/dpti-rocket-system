@@ -50,9 +50,10 @@ test.describe('Create Production Step E2E Tests', () => {
   });
 
   test('Complete Create Production Step Workflow', async ({ page }) => {
-    // Step 1: Navigate to a rocket details page using direct URL
-    // Let's use rocket ID 1 for testing (we'll assume it exists)
-    await page.goto('http://localhost/dpti-rocket-system/views/rocket_detail_view.php?id=1');
+    // Step 1: From dashboard, click on the first rocket's "View" button
+    const firstViewButton = page.locator('table tbody tr:first-child .action-buttons a:has-text("View")');
+    await expect(firstViewButton).toBeVisible();
+    await firstViewButton.click();
     
     // Verify we're on rocket detail page
     await expect(page.locator('h1')).toContainText('Rocket Details');
@@ -146,8 +147,9 @@ test.describe('Create Production Step E2E Tests', () => {
   });
 
   test('Verify form validation', async ({ page }) => {
-    // Navigate to add production step form using direct URL
-    await page.goto('http://localhost/dpti-rocket-system/views/rocket_detail_view.php?id=1');
+    // Navigate to add production step form from dashboard
+    const firstViewButton = page.locator('table tbody tr:first-child .action-buttons a:has-text("View")');
+    await firstViewButton.click();
     
     const addStepButton = page.locator('a:has-text("Add New Production Step")');
     await addStepButton.click();
@@ -173,8 +175,9 @@ test.describe('Create Production Step E2E Tests', () => {
   });
 
   test('Verify template switching loads different fields', async ({ page }) => {
-    // Navigate to add production step form using direct URL
-    await page.goto('http://localhost/dpti-rocket-system/views/rocket_detail_view.php?id=1');
+    // Navigate to add production step form from dashboard
+    const firstViewButton = page.locator('table tbody tr:first-child .action-buttons a:has-text("View")');
+    await firstViewButton.click();
     
     const addStepButton = page.locator('a:has-text("Add New Production Step")');
     await addStepButton.click();
