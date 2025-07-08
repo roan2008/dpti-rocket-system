@@ -6,6 +6,39 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Include user functions for authentication checks
 require_once __DIR__ . '/user_functions.php';
+
+// Function to determine active navigation state
+function is_active_nav($path) {
+    $current_page = $_SERVER['REQUEST_URI'];
+    $current_page = parse_url($current_page, PHP_URL_PATH);
+    
+    // Remove dpti-rocket-system prefix for comparison
+    $current_page = str_replace('/dpti-rocket-system', '', $current_page);
+    $path = str_replace('/dpti-rocket-system', '', $path);
+    
+    // Special cases for different page patterns
+    if ($path === '/dashboard.php' && ($current_page === '/dashboard.php' || $current_page === '/')) {
+        return true;
+    }
+    
+    if ($path === '/views/production_steps_view.php' && strpos($current_page, 'production') !== false) {
+        return true;
+    }
+    
+    if ($path === '/views/templates_list_view.php' && strpos($current_page, 'template') !== false) {
+        return true;
+    }
+    
+    if ($path === '/controllers/approval_controller.php' && strpos($current_page, 'approval') !== false) {
+        return true;
+    }
+    
+    if ($path === '/views/user_management_view.php' && strpos($current_page, 'user_management') !== false) {
+        return true;
+    }
+    
+    return false;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -31,12 +64,12 @@ require_once __DIR__ . '/user_functions.php';
                 
                 <!-- Primary Navigation -->
                 <div class="nav-center">
-                    <a href="/dpti-rocket-system/dashboard.php" class="nav-link">Dashboard</a>
-                    <a href="/dpti-rocket-system/views/production_steps_view.php" class="nav-link">Production</a>
+                    <a href="/dpti-rocket-system/dashboard.php" class="nav-link <?php echo is_active_nav('/dashboard.php') ? 'nav-link-primary' : ''; ?>">Dashboard</a>
+                    <a href="/dpti-rocket-system/views/production_steps_view.php" class="nav-link <?php echo is_active_nav('/views/production_steps_view.php') ? 'nav-link-primary' : ''; ?>">Production</a>
                     
                     <?php if (has_role('engineer') || has_role('admin')): ?>
-                        <a href="/dpti-rocket-system/views/templates_list_view.php" class="nav-link">Templates</a>
-                        <a href="/dpti-rocket-system/controllers/approval_controller.php?action=list_pending" class="nav-link nav-link-primary">
+                        <a href="/dpti-rocket-system/views/templates_list_view.php" class="nav-link <?php echo is_active_nav('/views/templates_list_view.php') ? 'nav-link-primary' : ''; ?>">Templates</a>
+                        <a href="/dpti-rocket-system/controllers/approval_controller.php?action=list_pending" class="nav-link <?php echo is_active_nav('/controllers/approval_controller.php') ? 'nav-link-primary' : ''; ?>">
                             Approvals
                             <?php
                             // Show pending count badge
@@ -51,7 +84,7 @@ require_once __DIR__ . '/user_functions.php';
                     <?php endif; ?>
                     
                     <?php if (has_role('admin')): ?>
-                        <a href="/dpti-rocket-system/views/user_management_view.php" class="nav-link">Admin</a>
+                        <a href="/dpti-rocket-system/views/user_management_view.php" class="nav-link <?php echo is_active_nav('/views/user_management_view.php') ? 'nav-link-primary' : ''; ?>">Admin</a>
                     <?php endif; ?>
                 </div>
                 
