@@ -85,6 +85,13 @@ include '../includes/header.php';
                 case 'status_updated':
                     echo "Rocket status updated successfully!";
                     break;
+                case 'status_updated_with_audit':
+                    $previous = htmlspecialchars($_GET['previous_status'] ?? 'Unknown');
+                    $new = htmlspecialchars($_GET['new_status'] ?? 'Unknown');
+                    $log_id = htmlspecialchars($_GET['log_id'] ?? 'N/A');
+                    echo "✅ Status successfully updated from '<strong>$previous</strong>' to '<strong>$new</strong>'<br>";
+                    echo "<small>Change logged with audit ID: #$log_id</small>";
+                    break;
                 default:
                     echo "Operation completed successfully!";
             }
@@ -107,6 +114,25 @@ include '../includes/header.php';
                     break;
                 case 'invalid_status':
                     echo "Invalid status selected.";
+                    break;
+                case 'missing_status':
+                    echo "Please select a new status.";
+                    break;
+                case 'missing_reason':
+                    echo "Change reason is required for audit purposes.";
+                    break;
+                case 'reason_too_short':
+                    echo "Change reason must be at least 10 characters long.";
+                    break;
+                case 'reason_too_long':
+                    echo "Change reason cannot exceed 500 characters.";
+                    break;
+                case 'same_status':
+                    echo "The selected status is the same as the current status.";
+                    break;
+                case 'audit_update_failed':
+                    $message = htmlspecialchars($_GET['message'] ?? 'Unknown error');
+                    echo "Failed to update status: $message";
                     break;
                 default:
                     echo "An error occurred. Please try again.";
@@ -217,31 +243,17 @@ include '../includes/header.php';
                     </div>
                 </div>
                 
-                <!-- Quick Status Update (for all authenticated users) -->
+                <!-- Quick Actions with Audit Trail -->
                 <div class="detail-section">
                     <h3>Quick Actions</h3>
-                    <form method="POST" action="../controllers/rocket_controller.php" class="quick-status-form">
-                        <input type="hidden" name="action" value="update_status">
-                        <input type="hidden" name="rocket_id" value="<?php echo $rocket_id; ?>">
-                        
-                        <div class="form-group">
-                            <label for="new_status">Update Status:</label>
-                            <div class="status-update-group">
-                                <select id="new_status" name="new_status">
-                                    <?php 
-                                    $statuses = ['New', 'Planning', 'Design', 'In Production', 'Testing', 'Completed', 'On Hold'];
-                                    foreach ($statuses as $status): 
-                                    ?>
-                                        <option value="<?php echo htmlspecialchars($status); ?>" 
-                                                <?php echo ($status === $rocket['current_status']) ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($status); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <button type="submit" class="btn btn-sm btn-primary">Update</button>
-                            </div>
-                        </div>
-                    </form>
+                    <div class="action-buttons-left">
+                        <button onclick="openStatusUpdateModal()" class="btn btn-primary btn-lg">
+                            <i class="icon-edit"></i> Manual Status Update
+                        </button>
+                        <p class="action-description">
+                            Update rocket status with audit trail logging
+                        </p>
+                    </div>
                 </div>
             </div>
             
@@ -346,6 +358,118 @@ include '../includes/header.php';
 </div>
 <!-- End container -->
 
+<!-- Status Update Modal with Audit Trail -->
+<div id="statusUpdateModal" class="modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h3>Update Rocket Status</h3>
+            <button onclick="closeStatusModal()" class="modal-close">&times;</button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="current-status-info">
+                <div class="status-info-card">
+                    <h4>Current Information</h4>
+                    <div class="info-row">
+                        <span class="label">Rocket:</span>
+                        <span class="value"><?php echo htmlspecialchars($rocket['serial_number']); ?> - <?php echo htmlspecialchars($rocket['project_name']); ?></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Current Status:</span>
+                        <span class="value">
+                            <span class="status-badge status-<?php echo strtolower(str_replace(' ', '-', $rocket['current_status'])); ?>">
+                                <?php echo htmlspecialchars($rocket['current_status']); ?>
+                            </span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <form id="statusUpdateForm" method="POST" action="../controllers/rocket_controller.php" class="status-update-form">
+                <input type="hidden" name="action" value="update_status_with_audit">
+                <input type="hidden" name="rocket_id" value="<?php echo $rocket_id; ?>">
+                <input type="hidden" name="current_status" value="<?php echo htmlspecialchars($rocket['current_status']); ?>">
+                
+                <div class="form-group">
+                    <label for="modal_new_status">New Status <span class="required">*</span></label>
+                    <select id="modal_new_status" name="new_status" required>
+                        <option value="">-- Select New Status --</option>
+                        <?php 
+                        $statuses = [
+                            'New' => 'New Project',
+                            'Planning' => 'Planning Phase', 
+                            'Design' => 'Design Phase',
+                            'Development' => 'Development Phase',
+                            'Testing' => 'Testing Phase',
+                            'Ready for Production' => 'Ready for Production',
+                            'In Production' => 'In Production',
+                            'Completed' => 'Completed',
+                            'On Hold' => 'On Hold',
+                            'Cancelled' => 'Cancelled'
+                        ];
+                        
+                        foreach ($statuses as $value => $display): 
+                            // Don't show current status as an option
+                            if ($value !== $rocket['current_status']):
+                        ?>
+                            <option value="<?php echo htmlspecialchars($value); ?>">
+                                <?php echo htmlspecialchars($display); ?>
+                            </option>
+                        <?php 
+                            endif;
+                        endforeach; 
+                        ?>
+                    </select>
+                    <small class="form-hint">Select the new status for this rocket</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="change_reason">Reason for Change <span class="required">*</span></label>
+                    <textarea 
+                        id="change_reason" 
+                        name="change_reason" 
+                        required 
+                        rows="4" 
+                        maxlength="500"
+                        placeholder="Please provide a detailed reason for this status change. This will be logged for audit purposes."
+                    ></textarea>
+                    <small class="form-hint">
+                        <span id="reason-counter">0</span>/500 characters. 
+                        This reason will be permanently recorded in the audit log.
+                    </small>
+                </div>
+                
+                <div class="status-preview" id="statusPreview" style="display: none;">
+                    <div class="preview-card">
+                        <h4>Change Preview</h4>
+                        <div class="status-change-visual">
+                            <span class="current-status">
+                                <span class="status-badge status-<?php echo strtolower(str_replace(' ', '-', $rocket['current_status'])); ?>">
+                                    <?php echo htmlspecialchars($rocket['current_status']); ?>
+                                </span>
+                            </span>
+                            <span class="arrow">→</span>
+                            <span class="new-status" id="previewNewStatus">
+                                <!-- Will be filled by JavaScript -->
+                            </span>
+                        </div>
+                        <div class="change-summary">
+                            <p><strong>Reason:</strong> <span id="previewReason"><!-- Will be filled by JavaScript --></span></p>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" onclick="closeStatusModal()" class="btn btn-secondary">Cancel</button>
+            <button type="submit" form="statusUpdateForm" class="btn btn-primary" id="confirmChangeBtn" disabled>
+                <i class="icon-check"></i> Confirm Status Change
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Delete Confirmation Modal (for admins only) -->
 <?php if (has_role('admin')): ?>
 <div id="deleteModal" class="modal" style="display: none;">
@@ -365,6 +489,132 @@ include '../includes/header.php';
 </div>
 
 <script>
+// Status Update Modal Functions
+function openStatusUpdateModal() {
+    document.getElementById('statusUpdateModal').style.display = 'flex';
+    // Reset form
+    document.getElementById('statusUpdateForm').reset();
+    document.getElementById('statusPreview').style.display = 'none';
+    document.getElementById('confirmChangeBtn').disabled = true;
+    updateCharacterCounter();
+}
+
+function closeStatusModal() {
+    document.getElementById('statusUpdateModal').style.display = 'none';
+}
+
+// Character counter for reason textarea
+function updateCharacterCounter() {
+    const textarea = document.getElementById('change_reason');
+    const counter = document.getElementById('reason-counter');
+    const count = textarea.value.length;
+    counter.textContent = count;
+    
+    // Change color based on usage
+    if (count > 450) {
+        counter.style.color = '#dc3545'; // Red when near limit
+    } else if (count > 300) {
+        counter.style.color = '#ffc107'; // Yellow when getting long
+    } else {
+        counter.style.color = '#6c757d'; // Default gray
+    }
+}
+
+// Preview status change
+function updateStatusPreview() {
+    const newStatusSelect = document.getElementById('modal_new_status');
+    const reasonTextarea = document.getElementById('change_reason');
+    const preview = document.getElementById('statusPreview');
+    const confirmBtn = document.getElementById('confirmChangeBtn');
+    
+    const newStatus = newStatusSelect.value;
+    const reason = reasonTextarea.value.trim();
+    
+    if (newStatus && reason.length >= 10) {
+        // Show preview
+        preview.style.display = 'block';
+        confirmBtn.disabled = false;
+        
+        // Update preview content
+        const previewNewStatus = document.getElementById('previewNewStatus');
+        const previewReason = document.getElementById('previewReason');
+        
+        // Create status badge for new status
+        const statusClass = 'status-' + newStatus.toLowerCase().replace(/\s+/g, '-');
+        previewNewStatus.innerHTML = `<span class="status-badge ${statusClass}">${newStatus}</span>`;
+        
+        // Truncate reason if too long for preview
+        const displayReason = reason.length > 100 ? reason.substring(0, 97) + '...' : reason;
+        previewReason.textContent = displayReason;
+    } else {
+        // Hide preview and disable button
+        preview.style.display = 'none';
+        confirmBtn.disabled = true;
+    }
+}
+
+// Form validation and submission
+function validateStatusForm() {
+    const newStatus = document.getElementById('modal_new_status').value;
+    const reason = document.getElementById('change_reason').value.trim();
+    
+    if (!newStatus) {
+        alert('Please select a new status.');
+        return false;
+    }
+    
+    if (reason.length < 10) {
+        alert('Please provide a more detailed reason (at least 10 characters).');
+        document.getElementById('change_reason').focus();
+        return false;
+    }
+    
+    // Show loading state
+    const confirmBtn = document.getElementById('confirmChangeBtn');
+    confirmBtn.innerHTML = '<i class="icon-loading"></i> Updating...';
+    confirmBtn.disabled = true;
+    
+    return true;
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Character counter
+    document.getElementById('change_reason').addEventListener('input', function() {
+        updateCharacterCounter();
+        updateStatusPreview();
+    });
+    
+    // Status change preview
+    document.getElementById('modal_new_status').addEventListener('change', updateStatusPreview);
+    
+    // Form submission validation
+    document.getElementById('statusUpdateForm').addEventListener('submit', function(e) {
+        if (!validateStatusForm()) {
+            e.preventDefault();
+        }
+    });
+    
+    // Close modal on outside click
+    window.addEventListener('click', function(event) {
+        const statusModal = document.getElementById('statusUpdateModal');
+        if (event.target === statusModal) {
+            closeStatusModal();
+        }
+    });
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const statusModal = document.getElementById('statusUpdateModal');
+            if (statusModal.style.display === 'flex') {
+                closeStatusModal();
+            }
+        }
+    });
+});
+
+// Legacy delete modal functions (keep existing functionality)
 function confirmDelete() {
     document.getElementById('deleteModal').style.display = 'flex';
 }

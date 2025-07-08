@@ -34,6 +34,9 @@ switch ($action) {
     case 'update_status':
         handle_update_status();
         break;
+    case 'update_status_with_audit':
+        handle_update_status_with_audit();
+        break;
     default:
         // Invalid action - redirect to dashboard
         header('Location: ../dashboard.php?error=invalid_action');
@@ -239,6 +242,106 @@ function handle_update_status() {
         exit;
     } else {
         header('Location: ../dashboard.php?error=status_update_failed');
+        exit;
+    }
+}
+
+/**
+ * Handle updating rocket status with audit trail
+ */
+function handle_update_status_with_audit() {
+    global $pdo;
+    
+    // Only process POST requests
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: ../dashboard.php?error=invalid_method');
+        exit;
+    }
+    
+    // Check permissions (admin, engineer, or staff can update status)
+    if (!has_role('admin') && !has_role('engineer') && !has_role('staff')) {
+        header('Location: ../dashboard.php?error=insufficient_permissions');
+        exit;
+    }
+    
+    // Get data from form
+    $rocket_id = (int) ($_POST['rocket_id'] ?? 0);
+    $new_status = trim($_POST['new_status'] ?? '');
+    $change_reason = trim($_POST['change_reason'] ?? '');
+    $current_status = trim($_POST['current_status'] ?? '');
+    
+    // Validate required fields
+    if ($rocket_id <= 0) {
+        header('Location: ../views/rocket_detail_view.php?id=' . $rocket_id . '&error=invalid_rocket_id');
+        exit;
+    }
+    
+    if (empty($new_status)) {
+        header('Location: ../views/rocket_detail_view.php?id=' . $rocket_id . '&error=missing_status');
+        exit;
+    }
+    
+    if (empty($change_reason)) {
+        header('Location: ../views/rocket_detail_view.php?id=' . $rocket_id . '&error=missing_reason');
+        exit;
+    }
+    
+    // Validate reason length
+    if (strlen($change_reason) < 10) {
+        header('Location: ../views/rocket_detail_view.php?id=' . $rocket_id . '&error=reason_too_short');
+        exit;
+    }
+    
+    if (strlen($change_reason) > 500) {
+        header('Location: ../views/rocket_detail_view.php?id=' . $rocket_id . '&error=reason_too_long');
+        exit;
+    }
+    
+    // Get current user ID from session
+    $user_id = $_SESSION['user_id'] ?? 0;
+    if ($user_id <= 0) {
+        header('Location: ../views/login_view.php?error=session_expired');
+        exit;
+    }
+    
+    // Validate allowed statuses
+    $allowed_statuses = [
+        'New', 'Planning', 'Design', 'Development', 
+        'Testing', 'Ready for Production', 'In Production', 
+        'Completed', 'On Hold', 'Cancelled'
+    ];
+    
+    if (!in_array($new_status, $allowed_statuses)) {
+        header('Location: ../views/rocket_detail_view.php?id=' . $rocket_id . '&error=invalid_status');
+        exit;
+    }
+    
+    // Check if status is actually changing
+    if ($new_status === $current_status) {
+        header('Location: ../views/rocket_detail_view.php?id=' . $rocket_id . '&error=same_status');
+        exit;
+    }
+    
+    // Use the new audit trail function
+    $update_result = update_rocket_status($pdo, $rocket_id, $new_status, $user_id, $change_reason);
+    
+    if ($update_result['success']) {
+        // Success - redirect with success message and log information
+        $success_params = http_build_query([
+            'success' => 'status_updated_with_audit',
+            'log_id' => $update_result['log_id'],
+            'previous_status' => $update_result['previous_status'],
+            'new_status' => $update_result['new_status']
+        ]);
+        header('Location: ../views/rocket_detail_view.php?id=' . $rocket_id . '&' . $success_params);
+        exit;
+    } else {
+        // Failed - redirect with error message
+        $error_params = http_build_query([
+            'error' => 'audit_update_failed',
+            'message' => $update_result['message']
+        ]);
+        header('Location: ../views/rocket_detail_view.php?id=' . $rocket_id . '&' . $error_params);
         exit;
     }
 }

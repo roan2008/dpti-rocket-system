@@ -68,6 +68,24 @@ CREATE TABLE `approvals` (
 
 -- --------------------------------------------------------
 
+-- Table structure for table `rocket_status_logs`
+-- Audit trail for rocket status changes to ensure data integrity
+CREATE TABLE `rocket_status_logs` (
+    `log_id` INT(11) NOT NULL AUTO_INCREMENT,
+    `rocket_id` INT(11) NOT NULL,
+    `user_id` INT(11) NOT NULL,
+    `previous_status` VARCHAR(100) NOT NULL,
+    `new_status` VARCHAR(100) NOT NULL,
+    `change_reason` TEXT NOT NULL,
+    `changed_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`log_id`),
+    KEY `fk_rocket_status_logs_rocket_id` (`rocket_id`),
+    KEY `fk_rocket_status_logs_user_id` (`user_id`),
+    KEY `idx_rocket_status_logs_changed_at` (`changed_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
 -- Add Foreign Key Constraints
 
 -- Foreign key for production_steps.rocket_id
@@ -98,6 +116,22 @@ ALTER TABLE `approvals`
 ALTER TABLE `approvals`
     ADD CONSTRAINT `fk_approvals_engineer_id` 
     FOREIGN KEY (`engineer_id`) 
+    REFERENCES `users` (`user_id`) 
+    ON DELETE RESTRICT 
+    ON UPDATE CASCADE;
+
+-- Foreign key for rocket_status_logs.rocket_id
+ALTER TABLE `rocket_status_logs`
+    ADD CONSTRAINT `fk_rocket_status_logs_rocket_id` 
+    FOREIGN KEY (`rocket_id`) 
+    REFERENCES `rockets` (`rocket_id`) 
+    ON DELETE CASCADE 
+    ON UPDATE CASCADE;
+
+-- Foreign key for rocket_status_logs.user_id
+ALTER TABLE `rocket_status_logs`
+    ADD CONSTRAINT `fk_rocket_status_logs_user_id` 
+    FOREIGN KEY (`user_id`) 
     REFERENCES `users` (`user_id`) 
     ON DELETE RESTRICT 
     ON UPDATE CASCADE;

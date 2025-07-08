@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend UI Test - DPTI Rocket System</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        body { padding: 20px; background: #f4f4f4; }
+        .test-container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        .test-button { margin: 10px; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🚀 Frontend UI Test - Status Update Modal</h1>
+        <p>This page tests the new status update modal functionality without requiring authentication.</p>
+        
+        <div class="detail-section">
+            <h3>Current Rocket Information (Simulated)</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Serial Number:</label>
+                    <span class="serial-number">RKT-2025-TEST</span>
+                </div>
+                <div class="info-item">
+                    <label>Project Name:</label>
+                    <span class="project-name">Test Rocket Project</span>
+                </div>
+                <div class="info-item">
+                    <label>Current Status:</label>
+                    <span class="status-badge status-development">Development</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="detail-section">
+            <h3>Quick Actions</h3>
+            <div class="action-buttons">
+                <button onclick="openStatusUpdateModal()" class="btn btn-primary test-button">
+                    <i class="icon-edit"></i> Manual Status Update
+                </button>
+                <button class="btn btn-secondary test-button">
+                    <i class="icon-settings"></i> Edit Details (Simulated)
+                </button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test Instructions</h3>
+            <ol>
+                <li>Click the "Manual Status Update" button above</li>
+                <li>The modal should open with a form</li>
+                <li>Select a new status from the dropdown</li>
+                <li>Enter a reason (minimum 10 characters)</li>
+                <li>Watch the preview update in real-time</li>
+                <li>The "Confirm Status Change" button should enable when form is valid</li>
+                <li>Test validation by leaving fields empty or entering short reasons</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Status Update Modal (copied from rocket_detail_view.php) -->
+    <div id="statusUpdateModal" class="modal" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>Update Rocket Status</h3>
+                <button onclick="closeStatusModal()" class="modal-close">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="current-status-info">
+                    <div class="status-info-card">
+                        <h4>Current Information</h4>
+                        <div class="info-row">
+                            <span class="label">Rocket:</span>
+                            <span class="value">RKT-2025-TEST - Test Rocket Project</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Current Status:</span>
+                            <span class="value">
+                                <span class="status-badge status-development">Development</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <form id="statusUpdateForm" onsubmit="handleTestSubmit(event)" class="status-update-form">
+                    <input type="hidden" name="action" value="update_status_with_audit">
+                    <input type="hidden" name="rocket_id" value="999">
+                    <input type="hidden" name="current_status" value="Development">
+                    
+                    <div class="form-group">
+                        <label for="modal_new_status">New Status <span class="required">*</span></label>
+                        <select id="modal_new_status" name="new_status" required>
+                            <option value="">-- Select New Status --</option>
+                            <option value="New">New Project</option>
+                            <option value="Planning">Planning Phase</option>
+                            <option value="Design">Design Phase</option>
+                            <option value="Testing">Testing Phase</option>
+                            <option value="Ready for Production">Ready for Production</option>
+                            <option value="In Production">In Production</option>
+                            <option value="Completed">Completed</option>
+                            <option value="On Hold">On Hold</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                        <small class="form-hint">Select the new status for this rocket</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="change_reason">Reason for Change <span class="required">*</span></label>
+                        <textarea 
+                            id="change_reason" 
+                            name="change_reason" 
+                            required 
+                            rows="4" 
+                            maxlength="500"
+                            placeholder="Please provide a detailed reason for this status change. This will be logged for audit purposes."
+                        ></textarea>
+                        <small class="form-hint">
+                            <span id="reason-counter">0</span>/500 characters. 
+                            This reason will be permanently recorded in the audit log.
+                        </small>
+                    </div>
+                    
+                    <div class="status-preview" id="statusPreview" style="display: none;">
+                        <div class="preview-card">
+                            <h4>Change Preview</h4>
+                            <div class="status-change-visual">
+                                <span class="current-status">
+                                    <span class="status-badge status-development">Development</span>
+                                </span>
+                                <span class="arrow">→</span>
+                                <span class="new-status" id="previewNewStatus">
+                                    <!-- Will be filled by JavaScript -->
+                                </span>
+                            </div>
+                            <div class="change-summary">
+                                <p><strong>Reason:</strong> <span id="previewReason"><!-- Will be filled by JavaScript --></span></p>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" onclick="closeStatusModal()" class="btn btn-secondary">Cancel</button>
+                <button type="submit" form="statusUpdateForm" class="btn btn-primary" id="confirmChangeBtn" disabled>
+                    <i class="icon-check"></i> Confirm Status Change
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Test submit handler
+    function handleTestSubmit(event) {
+        event.preventDefault();
+        alert('✅ Form would be submitted!\n\nData:\n' + 
+              'New Status: ' + document.getElementById('modal_new_status').value + '\n' +
+              'Reason: ' + document.getElementById('change_reason').value);
+        closeStatusModal();
+    }
+
+    // Include the same JavaScript from rocket_detail_view.php
+    function openStatusUpdateModal() {
+        document.getElementById('statusUpdateModal').style.display = 'flex';
+        document.getElementById('statusUpdateForm').reset();
+        document.getElementById('statusPreview').style.display = 'none';
+        document.getElementById('confirmChangeBtn').disabled = true;
+        updateCharacterCounter();
+    }
+
+    function closeStatusModal() {
+        document.getElementById('statusUpdateModal').style.display = 'none';
+    }
+
+    function updateCharacterCounter() {
+        const textarea = document.getElementById('change_reason');
+        const counter = document.getElementById('reason-counter');
+        const count = textarea.value.length;
+        counter.textContent = count;
+        
+        if (count > 450) {
+            counter.style.color = '#dc3545';
+        } else if (count > 300) {
+            counter.style.color = '#ffc107';
+        } else {
+            counter.style.color = '#6c757d';
+        }
+    }
+
+    function updateStatusPreview() {
+        const newStatusSelect = document.getElementById('modal_new_status');
+        const reasonTextarea = document.getElementById('change_reason');
+        const preview = document.getElementById('statusPreview');
+        const confirmBtn = document.getElementById('confirmChangeBtn');
+        
+        const newStatus = newStatusSelect.value;
+        const reason = reasonTextarea.value.trim();
+        
+        if (newStatus && reason.length >= 10) {
+            preview.style.display = 'block';
+            confirmBtn.disabled = false;
+            
+            const previewNewStatus = document.getElementById('previewNewStatus');
+            const previewReason = document.getElementById('previewReason');
+            
+            const statusClass = 'status-' + newStatus.toLowerCase().replace(/\s+/g, '-');
+            previewNewStatus.innerHTML = `<span class="status-badge ${statusClass}">${newStatus}</span>`;
+            
+            const displayReason = reason.length > 100 ? reason.substring(0, 97) + '...' : reason;
+            previewReason.textContent = displayReason;
+        } else {
+            preview.style.display = 'none';
+            confirmBtn.disabled = true;
+        }
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('change_reason').addEventListener('input', function() {
+            updateCharacterCounter();
+            updateStatusPreview();
+        });
+        
+        document.getElementById('modal_new_status').addEventListener('change', updateStatusPreview);
+        
+        window.addEventListener('click', function(event) {
+            const statusModal = document.getElementById('statusUpdateModal');
+            if (event.target === statusModal) {
+                closeStatusModal();
+            }
+        });
+        
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const statusModal = document.getElementById('statusUpdateModal');
+                if (statusModal.style.display === 'flex') {
+                    closeStatusModal();
+                }
+            }
+        });
+    });
+    </script>
+</body>
+</html>
