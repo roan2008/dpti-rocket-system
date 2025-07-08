@@ -516,6 +516,135 @@ function test_get_users_by_role() {
     return true;
 }
 
+/**
+ * Test 17: Prevent changing the role of the last admin (Self-lockout protection)
+ */
+function test_update_user_last_admin_role_protection() {
+    global $pdo;
+    
+    // Step 1: Ensure we have exactly one admin user
+    $admins = get_users_by_role($pdo, 'admin');
+    $admin_count = count($admins);
+    
+    if ($admin_count === 0) {
+        return "No admin users found to test protection";
+    }
+    
+    $test_admin = null;
+    $cleanup_admin_ids = [];
+    
+    if ($admin_count > 1) {
+        // If there are multiple admins, temporarily delete extras to get to exactly 1
+        for ($i = 1; $i < $admin_count; $i++) {
+            $cleanup_admin_ids[] = $admins[$i]['user_id'];
+            // Temporarily update their role to staff (we'll restore later)
+            $stmt = $pdo->prepare("UPDATE users SET role = 'staff' WHERE user_id = ?");
+            $stmt->execute([$admins[$i]['user_id']]);
+        }
+        $test_admin = $admins[0];
+    } else {
+        // Exactly 1 admin - perfect for testing
+        $test_admin = $admins[0];
+    }
+    
+    // Step 2: Verify we now have exactly 1 admin
+    $current_admin_count = countAdmins($pdo);
+    if ($current_admin_count !== 1) {
+        return "Failed to setup test state: expected 1 admin, got {$current_admin_count}";
+    }
+    
+    // Step 3: Attempt to change the last admin's role to 'engineer' (should fail)
+    $result = update_user($pdo, $test_admin['user_id'], $test_admin['username'], $test_admin['full_name'], 'engineer');
+    
+    // Step 4: Verify the operation failed
+    if ($result['success']) {
+        // Restore cleanup before returning error
+        foreach ($cleanup_admin_ids as $admin_id) {
+            $stmt = $pdo->prepare("UPDATE users SET role = 'admin' WHERE user_id = ?");
+            $stmt->execute([$admin_id]);
+        }
+        return "FAIL: Last admin role change should have been prevented but succeeded";
+    }
+    
+    // Step 5: Verify the error message is correct
+    $expected_message = "Cannot change the role of the last administrator";
+    if ($result['message'] !== $expected_message) {
+        // Restore cleanup before returning error
+        foreach ($cleanup_admin_ids as $admin_id) {
+            $stmt = $pdo->prepare("UPDATE users SET role = 'admin' WHERE user_id = ?");
+            $stmt->execute([$admin_id]);
+        }
+        return "FAIL: Expected error message '{$expected_message}', got '{$result['message']}'";
+    }
+    
+    // Step 6: Verify the admin's role in database remains unchanged
+    $updated_admin = get_user_by_id($pdo, $test_admin['user_id']);
+    if ($updated_admin['role'] !== 'admin') {
+        // Restore cleanup before returning error
+        foreach ($cleanup_admin_ids as $admin_id) {
+            $stmt = $pdo->prepare("UPDATE users SET role = 'admin' WHERE user_id = ?");
+            $stmt->execute([$admin_id]);
+        }
+        return "FAIL: Admin role was changed in database despite protection - role is now '{$updated_admin['role']}'";
+    }
+    
+    // Step 7: Test that the protection only applies when going from admin to non-admin
+    // Try changing admin to admin (should succeed)
+    $result = update_user($pdo, $test_admin['user_id'], $test_admin['username'], $test_admin['full_name'], 'admin');
+    if (!$result['success']) {
+        // Restore cleanup before returning error
+        foreach ($cleanup_admin_ids as $admin_id) {
+            $stmt = $pdo->prepare("UPDATE users SET role = 'admin' WHERE user_id = ?");
+            $stmt->execute([$admin_id]);
+        }
+        return "FAIL: Admin-to-admin role update should succeed: " . $result['message'];
+    }
+    
+    // Step 8: Test that protection doesn't apply when there are multiple admins
+    // Create a temporary second admin
+    $temp_result = create_user($pdo, 'temp_second_admin_' . time(), 'temppass123', 'Temp Second Admin', 'admin');
+    if (!$temp_result['success']) {
+        // Restore cleanup before returning error
+        foreach ($cleanup_admin_ids as $admin_id) {
+            $stmt = $pdo->prepare("UPDATE users SET role = 'admin' WHERE user_id = ?");
+            $stmt->execute([$admin_id]);
+        }
+        return "FAIL: Could not create temporary second admin for test: " . $temp_result['message'];
+    }
+    
+    $temp_admin_id = $temp_result['user_id'];
+    
+    // Now try changing first admin's role (should succeed since there are 2 admins)
+    $result = update_user($pdo, $test_admin['user_id'], $test_admin['username'], $test_admin['full_name'], 'engineer');
+    if (!$result['success']) {
+        // Cleanup temp admin and restore others
+        delete_user($pdo, $temp_admin_id, 999999);
+        foreach ($cleanup_admin_ids as $admin_id) {
+            $stmt = $pdo->prepare("UPDATE users SET role = 'admin' WHERE user_id = ?");
+            $stmt->execute([$admin_id]);
+        }
+        return "FAIL: Role change should succeed when multiple admins exist: " . $result['message'];
+    }
+    
+    // Step 9: Cleanup - restore original state
+    // Restore the first admin's role
+    $result = update_user($pdo, $test_admin['user_id'], $test_admin['username'], $test_admin['full_name'], 'admin');
+    if (!$result['success']) {
+        echo "Warning: Could not restore test admin's role\n";
+    }
+    
+    // Delete the temporary second admin
+    delete_user($pdo, $temp_admin_id, 999999);
+    
+    // Restore other admins that were temporarily changed
+    foreach ($cleanup_admin_ids as $admin_id) {
+        $stmt = $pdo->prepare("UPDATE users SET role = 'admin' WHERE user_id = ?");
+        $stmt->execute([$admin_id]);
+    }
+    
+    return true;
+}
+
 // Initialize database connection - use same settings as db_connect.php
 $host = 'localhost';
 $dbname = 'dpti_rocket_prod';
@@ -552,6 +681,7 @@ run_test("Delete User - Last Admin Protection", "test_delete_user_last_admin_pro
 run_test("Delete User - Success Case", "test_delete_user_success");
 run_test("Search Users", "test_search_users");
 run_test("Get Users by Role", "test_get_users_by_role");
+run_test("Update User - Last Admin Role Protection", "test_update_user_last_admin_role_protection");
 
 // Clean up test data after tests
 echo "\n🧹 Cleaning up test data after tests...\n";

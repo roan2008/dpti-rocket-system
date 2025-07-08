@@ -151,6 +151,23 @@ function count_users($pdo) {
 }
 
 /**
+ * Count total number of admin users
+ * 
+ * @param PDO $pdo Database connection
+ * @return int Total admin user count
+ */
+function countAdmins($pdo) {
+    try {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE role = 'admin'");
+        $stmt->execute();
+        return (int) $stmt->fetchColumn();
+    } catch (PDOException $e) {
+        error_log("Count admins error: " . $e->getMessage());
+        return 0;
+    }
+}
+
+/**
  * Create a new user
  * 
  * @param PDO $pdo Database connection
@@ -240,10 +257,20 @@ function update_user($pdo, $user_id, $username, $full_name, $role, $password = n
         }
         
         // Check if user exists
-        $stmt = $pdo->prepare("SELECT user_id FROM users WHERE user_id = ?");
+        $stmt = $pdo->prepare("SELECT user_id, role FROM users WHERE user_id = ?");
         $stmt->execute([$user_id]);
-        if (!$stmt->fetch()) {
+        $current_user = $stmt->fetch();
+        if (!$current_user) {
             return ['success' => false, 'message' => 'User not found'];
+        }
+        
+        // Critical Business Logic: Prevent self-lockout scenario
+        // If the user being edited is currently an admin AND the new role is NOT admin
+        if ($current_user['role'] === 'admin' && $role !== 'admin') {
+            $admin_count = countAdmins($pdo);
+            if ($admin_count <= 1) {
+                return ['success' => false, 'message' => 'Cannot change the role of the last administrator'];
+            }
         }
         
         // Check if username is taken by another user

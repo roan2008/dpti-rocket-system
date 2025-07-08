@@ -266,6 +266,19 @@ include '../includes/header.php';
                                     <p>Be careful when changing your role or other critical settings.</p>
                                 </div>
                             <?php endif; ?>
+
+                            <?php if ($user_data['role'] === 'admin'): ?>
+                                <?php 
+                                $admin_count = countAdmins($pdo);
+                                if ($admin_count <= 1): 
+                                ?>
+                                    <div class="critical-warning-box">
+                                        <p><strong>⚠️ Critical Warning:</strong> You are the last administrator!</p>
+                                        <p>Changing your role will lock everyone out of administrative functions.</p>
+                                        <p>The system will prevent role changes that would remove the last admin.</p>
+                                    </div>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -494,6 +507,24 @@ document.getElementById('full_name').focus();
 }
 
 .warning-box p:last-child {
+    margin-bottom: 0;
+}
+
+.critical-warning-box {
+    background-color: #f8d7da;
+    border: 2px solid #dc3545;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.critical-warning-box p {
+    margin: 0 0 0.5rem 0;
+    color: #721c24;
+    font-weight: 500;
+}
+
+.critical-warning-box p:last-child {
     margin-bottom: 0;
 }
 
