@@ -612,6 +612,50 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Production Step Functions
+function editStep(stepId) {
+    // Redirect to edit step view
+    window.location.href = `step_edit_view.php?id=${stepId}`;
+}
+
+function deleteStep(stepId) {
+    // Get step info for confirmation (you could enhance this with AJAX to get step name)
+    const stepName = `Step #${stepId}`;
+    
+    // Show confirmation dialog with warning
+    const confirmMessage = `⚠️ Are you sure you want to delete ${stepName}?
+
+⚠️ WARNING: This action cannot be undone!
+
+❌ Deletion will fail if this step has been approved (for audit purposes).
+
+🔄 If this is the last step for the rocket, the rocket status will be reset to 'Planning'.
+
+Continue with deletion?`;
+    
+    if (confirm(confirmMessage)) {
+        // Create and submit delete form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '../controllers/production_controller.php';
+        
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'delete_step';
+        
+        const stepInput = document.createElement('input');
+        stepInput.type = 'hidden';
+        stepInput.name = 'step_id';
+        stepInput.value = stepId;
+        
+        form.appendChild(actionInput);
+        form.appendChild(stepInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
 // Legacy delete modal functions (keep existing functionality)
 function confirmDelete() {
     document.getElementById('deleteModal').style.display = 'flex';

@@ -197,7 +197,7 @@ function handle_delete_step() {
         exit;
     }
     
-    // Check if step exists
+    // Get step data before deletion for redirect
     $step = getProductionStepById($pdo, $step_id);
     if (!$step) {
         header('Location: ../dashboard.php?error=step_not_found');
@@ -206,14 +206,20 @@ function handle_delete_step() {
     
     $rocket_id = $step['rocket_id'];
     
-    // Delete the step
+    // Delete the step using enhanced function
     $delete_result = deleteProductionStep($pdo, $step_id);
     
-    if ($delete_result) {
-        header('Location: ../views/rocket_detail_view.php?id=' . $rocket_id . '&success=step_deleted');
+    if ($delete_result['success']) {
+        header('Location: ../views/rocket_detail_view.php?id=' . $rocket_id . '&success=step_deleted&step_name=' . urlencode($step['step_name']));
         exit;
     } else {
-        header('Location: ../views/rocket_detail_view.php?id=' . $rocket_id . '&error=delete_failed');
+        // Handle different error types
+        $error_param = 'error=' . $delete_result['error'];
+        if (isset($delete_result['message'])) {
+            $error_param .= '&message=' . urlencode($delete_result['message']);
+        }
+        
+        header('Location: ../views/rocket_detail_view.php?id=' . $rocket_id . '&' . $error_param);
         exit;
     }
 }

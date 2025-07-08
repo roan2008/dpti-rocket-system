@@ -185,20 +185,92 @@ function updateProductionStep($pdo, $step_id, $step_name, $data_json) {
 }
 
 /**
- * Delete production step
+ * Delete production step with business logic validation
  * 
  * @param PDO $pdo Database connection
  * @param int $step_id Production step ID
- * @return bool True on success, false on failure
+ * @return array Result array with success status and message
  */
 function deleteProductionStep($pdo, $step_id) {
     try {
-        $stmt = $pdo->prepare("DELETE FROM production_steps WHERE step_id = ?");
-        return $stmt->execute([$step_id]);
+        // Start transaction for data integrity
+        $pdo->beginTransaction();
+        
+        // First check if step exists
+        $step = getProductionStepById($pdo, $step_id);
+        if (!$step) {
+            $pdo->rollBack();
+            return [
+                'success' => false,
+                'error' => 'step_not_found',
+                'message' => 'Production step not found'
+            ];
+        }
+        
+        // Check if step has associated approvals
+        require_once 'approval_functions.php';
+        $approval_status = getStepApprovalStatus($pdo, $step_id);
+        
+        if ($approval_status !== false) {
+            $pdo->rollBack();
+            return [
+                'success' => false,
+                'error' => 'has_approvals',
+                'message' => 'Cannot delete a step that has been approved. Steps with approval records must be kept for audit purposes.',
+                'approval_info' => $approval_status
+            ];
+        }
+        
+        // Check if this is the only step for the rocket
+        $rocket_step_count = countStepsByRocketId($pdo, $step['rocket_id']);
+        if ($rocket_step_count <= 1) {
+            // Update rocket status back to initial state
+            $stmt = $pdo->prepare("UPDATE rockets SET current_status = 'Planning' WHERE rocket_id = ?");
+            $stmt->execute([$step['rocket_id']]);
+        }
+        
+        // Delete the step
+        $delete_stmt = $pdo->prepare("DELETE FROM production_steps WHERE step_id = ?");
+        $delete_result = $delete_stmt->execute([$step_id]);
+        
+        if (!$delete_result) {
+            $pdo->rollBack();
+            return [
+                'success' => false,
+                'error' => 'delete_failed',
+                'message' => 'Failed to delete production step'
+            ];
+        }
+        
+        // Commit transaction
+        $pdo->commit();
+        
+        return [
+            'success' => true,
+            'message' => 'Production step deleted successfully',
+            'deleted_step' => [
+                'step_id' => $step_id,
+                'step_name' => $step['step_name'],
+                'rocket_id' => $step['rocket_id']
+            ]
+        ];
         
     } catch (PDOException $e) {
+        $pdo->rollBack();
         error_log("Delete production step error: " . $e->getMessage());
-        return false;
+        return [
+            'success' => false,
+            'error' => 'database_error',
+            'message' => 'Database error occurred while deleting step'
+        ];
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        error_log("Delete production step error: " . $e->getMessage());
+        return [
+            'success' => false,
+            'error' => 'unknown_error',
+            'message' => 'An unexpected error occurred'
+        ];
     }
 }
 

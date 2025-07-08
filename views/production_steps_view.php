@@ -375,6 +375,7 @@ include '../includes/header.php';
     width: 90%;
     max-height: 80%;
     overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
@@ -383,10 +384,12 @@ include '../includes/header.php';
     align-items: center;
     padding: 20px;
     border-bottom: 1px solid #dee2e6;
+    background: #f8f9fa;
 }
 
 .modal-header h3 {
     margin: 0;
+    color: #495057;
 }
 
 .modal-close {
@@ -395,9 +398,157 @@ include '../includes/header.php';
     font-size: 24px;
     cursor: pointer;
     color: #6c757d;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    color: #495057;
 }
 
 .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(80vh - 80px);
+}
+
+/* Step Data Display Styling */
+.step-data-display {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.step-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.step-header h4 {
+    margin: 0;
+    color: #495057;
+    font-size: 1.25rem;
+}
+
+.step-badge {
+    background: #007bff;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.step-meta {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.meta-item {
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.meta-item:last-child {
+    margin-bottom: 0;
+}
+
+.meta-item strong {
+    color: #495057;
+    font-weight: 600;
+}
+
+.step-data-section h5 {
+    color: #495057;
+    margin: 0 0 15px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.data-fields {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.data-field {
+    display: flex;
+    padding: 12px 15px;
+    border-bottom: 1px solid #f1f3f4;
+    align-items: flex-start;
+}
+
+.data-field:last-child {
+    border-bottom: none;
+}
+
+.data-field.error {
+    background: #fff5f5;
+    border-left: 4px solid #dc3545;
+}
+
+.field-label {
+    font-weight: 600;
+    color: #495057;
+    min-width: 120px;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.field-value {
+    color: #6c757d;
+    word-break: break-word;
+    flex: 1;
+}
+
+.raw-data {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #495057;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 0;
+}
+
+.no-data {
+    text-align: center;
+    padding: 30px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-size: 1rem;
+}
+
+.error-display {
+    text-align: center;
+    padding: 30px;
+}
+
+.error-display h4 {
+    color: #dc3545;
+    margin-bottom: 10px;
+}
+
+.error-display p {
+    color: #6c757d;
+    margin-bottom: 20px;
+}
     padding: 20px;
     max-height: 400px;
     overflow-y: auto;
@@ -418,25 +569,99 @@ include '../includes/header.php';
 <script>
 // Step data modal functions
 function showStepData(stepId) {
-    // Get step data via AJAX or from embedded data
-    // For now, we'll use a simple approach
     const modal = document.getElementById('stepDataModal');
     const content = document.getElementById('stepDataContent');
     
-    // Find the step data from the page (this is a simplified approach)
+    // Show loading state
     content.innerHTML = '<div class="loading">Loading step data...</div>';
     modal.style.display = 'flex';
     
-    // In a real implementation, you'd make an AJAX call here
-    setTimeout(() => {
-        content.innerHTML = `
-            <div class="step-data-display">
-                <p><strong>Step ID:</strong> ${stepId}</p>
-                <p>Detailed step data would be loaded here via AJAX call to get the JSON data.</p>
-                <p><em>Implementation note: This would typically fetch data from the server.</em></p>
-            </div>
-        `;
-    }, 500);
+    // Make AJAX call to get step data
+    fetch(`../controllers/step_ajax.php?action=get_step_data&step_id=${stepId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Build the step data display
+                let html = `
+                    <div class="step-data-display">
+                        <div class="step-header">
+                            <h4>Production Step #${data.step_info.step_id}</h4>
+                            <span class="step-badge">${data.step_info.step_name}</span>
+                        </div>
+                        
+                        <div class="step-meta">
+                            <div class="meta-item">
+                                <strong>Rocket:</strong> ${data.step_info.rocket_serial} (ID: ${data.step_info.rocket_id})
+                            </div>
+                            <div class="meta-item">
+                                <strong>Recorded by:</strong> ${data.step_info.staff_name}
+                            </div>
+                            <div class="meta-item">
+                                <strong>Timestamp:</strong> ${data.step_info.formatted_timestamp}
+                            </div>
+                        </div>
+                        
+                        <div class="step-data-section">
+                            <h5>Step Data (${data.field_count} fields)</h5>
+                            <div class="data-fields">
+                `;
+                
+                // Display the data fields
+                if (data.data_fields && typeof data.data_fields === 'object') {
+                    for (const [key, value] of Object.entries(data.data_fields)) {
+                        if (key !== 'parse_error') {
+                            html += `
+                                <div class="data-field">
+                                    <span class="field-label">${key}:</span>
+                                    <span class="field-value">${value}</span>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    // Show parse error if exists
+                    if (data.data_fields.parse_error) {
+                        html += `
+                            <div class="data-field error">
+                                <span class="field-label">Parse Error:</span>
+                                <span class="field-value">${data.data_fields.parse_error}</span>
+                            </div>
+                            <div class="data-field">
+                                <span class="field-label">Raw Data:</span>
+                                <pre class="raw-data">${data.data_fields.raw_data}</pre>
+                            </div>
+                        `;
+                    }
+                } else {
+                    html += '<div class="no-data">No additional data available</div>';
+                }
+                
+                html += `
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                content.innerHTML = html;
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading step data:', error);
+            content.innerHTML = `
+                <div class="error-display">
+                    <h4>Error Loading Step Data</h4>
+                    <p>Unable to load step data: ${error.message}</p>
+                    <button onclick="showStepData(${stepId})" class="btn btn-sm btn-primary">Retry</button>
+                </div>
+            `;
+        });
 }
 
 function closeStepDataModal() {
@@ -444,8 +669,8 @@ function closeStepDataModal() {
 }
 
 function editStep(stepId) {
-    // Redirect to edit step view (when implemented)
-    alert(`Edit step ${stepId} - Feature to be implemented`);
+    // Redirect to edit step view
+    window.location.href = `step_edit_view.php?id=${stepId}`;
 }
 
 function deleteStep(stepId) {
