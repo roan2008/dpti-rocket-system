@@ -141,14 +141,24 @@ function handle_edit_step() {
     }
     
     // Get and validate form data
-    $step_name = trim($_POST['step_name'] ?? '');
+    $template_id = (int) ($_POST['template_id'] ?? $_POST['step_name'] ?? 0); // Support both old and new format
     $data_json = trim($_POST['data_json'] ?? '');
     
     // Validate required fields
-    if (empty($step_name)) {
+    if ($template_id <= 0) {
         header('Location: ../views/step_edit_view.php?id=' . $step_id . '&error=missing_fields');
         exit;
     }
+    
+    // Get step name from template
+    require_once '../includes/template_functions.php';
+    $template_data = getTemplateWithFields($pdo, $template_id);
+    if (!$template_data) {
+        header('Location: ../views/step_edit_view.php?id=' . $step_id . '&error=invalid_template');
+        exit;
+    }
+    
+    $step_name = $template_data['step_name'];
     
     // Check if step exists
     $existing_step = getProductionStepById($pdo, $step_id);

@@ -109,7 +109,7 @@ include '../includes/header.php';
         
         <div class="form-group">
             <label for="step_name">Production Step <span class="required">*</span></label>
-            <select id="step_name" name="step_name" required onchange="loadTemplateFields()">
+            <select id="step_name" name="step_name" required disabled style="background-color: #f8f9fa; color: #6c757d;">
                 <option value="">Select a production step...</option>
                 <?php if (empty($active_templates)): ?>
                     <option value="" disabled>No active templates available</option>
@@ -122,7 +122,9 @@ include '../includes/header.php';
                     <?php endforeach; ?>
                 <?php endif; ?>
             </select>
-            <small class="field-help">Select the production step type</small>
+            <!-- Hidden field to ensure the value is still submitted -->
+            <input type="hidden" name="template_id" value="<?php echo htmlspecialchars($existing_data['template_id'] ?? ''); ?>">
+            <small class="field-help">⚠️ Production step type cannot be changed during editing to preserve data integrity</small>
         </div>
         
         <!-- Dynamic Form Fields Container -->
@@ -202,12 +204,38 @@ include '../includes/header.php';
     <div class="form-info">
         <h4>📋 Guidelines:</h4>
         <ul>
-            <li><strong>Updating Step Type:</strong> You can change the step type, but all data will need to be re-entered</li>
-            <li><strong>Required Fields:</strong> Fields marked with * must be filled for successful submission</li>
+            <li><strong>🔒 Step Type Locked:</strong> Production step type cannot be changed to maintain data integrity</li>
             <li><strong>Data Preservation:</strong> Your existing data is pre-filled in the form fields</li>
+            <li><strong>Required Fields:</strong> Fields marked with * must be filled for successful submission</li>
             <li><strong>Auto-Tracking:</strong> Changes are timestamped and linked to your user account</li>
         </ul>
     </div>
+    
+    <style>
+    /* Style for disabled production step dropdown */
+    select[disabled] {
+        background-color: #f8f9fa !important;
+        color: #6c757d !important;
+        cursor: not-allowed !important;
+        border-color: #dee2e6 !important;
+    }
+    
+    select[disabled]:focus {
+        box-shadow: none !important;
+        border-color: #dee2e6 !important;
+    }
+    
+    .field-help {
+        color: #856404;
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        margin-top: 5px;
+        display: block;
+    }
+    </style>
 </div>
 
 <script>
@@ -215,130 +243,8 @@ include '../includes/header.php';
 const existingData = <?php echo json_encode($existing_data); ?>;
 const activeTemplates = <?php echo json_encode($active_templates); ?>;
 
-// Load template fields when step type changes
-function loadTemplateFields() {
-    const stepSelect = document.getElementById('step_name');
-    const dynamicFields = document.getElementById('dynamic-form-fields');
-    
-    const selectedTemplateId = stepSelect.value;
-    
-    if (!selectedTemplateId) {
-        dynamicFields.innerHTML = '<div class="form-help"><p>👆 Select a production step above to see relevant fields</p></div>';
-        return;
-    }
-    
-    // Find the selected template
-    const selectedTemplate = activeTemplates.find(t => t.template_id == selectedTemplateId);
-    
-    if (!selectedTemplate) {
-        dynamicFields.innerHTML = '<div class="form-help"><p>❌ Template not found</p></div>';
-        return;
-    }
-    
-    // Show loading
-    dynamicFields.innerHTML = '<div class="form-help"><p>Loading template fields...</p></div>';
-    
-    // Fetch template fields via AJAX
-    fetch(`../controllers/template_ajax.php?action=get_template_fields&template_id=${selectedTemplateId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                generateDynamicForm(data.template);
-            } else {
-                dynamicFields.innerHTML = '<div class="form-help"><p>❌ Failed to load template fields</p></div>';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            dynamicFields.innerHTML = '<div class="form-help"><p>❌ Error loading template fields</p></div>';
-        });
-}
-
-// Generate dynamic form fields
-function generateDynamicForm(templateData) {
-    const container = document.getElementById('dynamic-form-fields');
-    container.innerHTML = '';
-    
-    // Add template header
-    const header = document.createElement('div');
-    header.className = 'template-info';
-    header.innerHTML = `
-        <h4>📝 ${templateData.step_name} Details</h4>
-        <p>${templateData.step_description || 'Fill in the relevant information for this production step:'}</p>
-    `;
-    container.appendChild(header);
-    
-    // Generate fields from database template
-    templateData.fields.forEach(field => {
-        const fieldDiv = document.createElement('div');
-        fieldDiv.className = 'form-group';
-        
-        const label = document.createElement('label');
-        label.textContent = field.field_label + (field.is_required ? ' *' : '');
-        label.htmlFor = 'dynamic_' + field.field_name;
-        
-        let input;
-        const existingValue = existingData[field.field_name] || '';
-        
-        switch(field.field_type) {
-            case 'text':
-            case 'number':
-            case 'date':
-            case 'email':
-                input = document.createElement('input');
-                input.type = field.field_type;
-                input.id = 'dynamic_' + field.field_name;
-                input.name = 'dynamic_' + field.field_name;
-                input.value = existingValue;
-                input.required = field.is_required;
-                break;
-                
-            case 'select':
-                input = document.createElement('select');
-                input.id = 'dynamic_' + field.field_name;
-                input.name = 'dynamic_' + field.field_name;
-                input.required = field.is_required;
-                
-                // Add default option
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = '-- Select --';
-                input.appendChild(defaultOption);
-                
-                // Add options from field definition
-                if (field.options_json) {
-                    try {
-                        const options = JSON.parse(field.options_json);
-                        options.forEach(optionValue => {
-                            const option = document.createElement('option');
-                            option.value = optionValue;
-                            option.textContent = optionValue;
-                            if (existingValue === optionValue) {
-                                option.selected = true;
-                            }
-                            input.appendChild(option);
-                        });
-                    } catch (e) {
-                        console.error('Invalid options JSON:', field.options_json);
-                    }
-                }
-                break;
-                
-            case 'textarea':
-                input = document.createElement('textarea');
-                input.id = 'dynamic_' + field.field_name;
-                input.name = 'dynamic_' + field.field_name;
-                input.value = existingValue;
-                input.rows = 4;
-                input.required = field.is_required;
-                break;
-        }
-        
-        fieldDiv.appendChild(label);
-        fieldDiv.appendChild(input);
-        container.appendChild(fieldDiv);
-    });
-}
+// Since step type is locked, we don't need the loadTemplateFields function
+// The template fields are already pre-populated from PHP
 
 // Handle form submission
 function handleFormSubmission(event) {
@@ -346,12 +252,12 @@ function handleFormSubmission(event) {
     
     const form = event.target;
     const hiddenInput = document.getElementById('data_json_hidden');
-    const stepSelect = document.getElementById('step_name');
+    const templateIdInput = document.querySelector('input[name="template_id"]');
     const dynamicFields = document.getElementById('dynamic-form-fields');
     
-    // Check if step is selected
-    if (!stepSelect.value) {
-        alert('Please select a production step.');
+    // Check if template ID exists (should always exist in edit mode)
+    if (!templateIdInput.value) {
+        alert('Error: No template ID found. Please refresh the page and try again.');
         return false;
     }
     
@@ -367,9 +273,9 @@ function handleFormSubmission(event) {
         }
     });
     
-    // Add metadata
-    formData.template_id = stepSelect.value;
-    formData.step_name = stepSelect.options[stepSelect.selectedIndex].text;
+    // Add metadata (preserve original template info)
+    formData.template_id = templateIdInput.value;
+    formData.step_name = existingData.step_name || 'Updated Step';
     formData.updated_at = new Date().toISOString();
     formData.updated_by = '<?php echo $_SESSION['username']; ?>';
     

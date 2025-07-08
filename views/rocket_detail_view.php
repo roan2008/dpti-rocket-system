@@ -62,16 +62,16 @@ include '../includes/header.php';
         <div class="page-actions">
             <?php if (!$edit_mode): ?>
                 <button onclick="openStatusUpdateModal()" class="btn btn-primary">
-                    <i class="icon-edit"></i> Manual Status Update
+                    Manual Status Update
                 </button>
                 <?php if ($can_edit): ?>
                     <a href="?id=<?php echo $rocket_id; ?>&edit=1" class="btn btn-secondary">
-                        <i class="icon-settings"></i> Edit Rocket
+                        Edit Rocket
                     </a>
                 <?php endif; ?>
                 <?php if (has_role('admin')): ?>
                     <button onclick="confirmDelete()" class="btn btn-danger">
-                        <i class="icon-delete"></i> Delete Rocket
+                        Delete Rocket
                     </button>
                 <?php endif; ?>
             <?php else: ?>
@@ -95,7 +95,7 @@ include '../includes/header.php';
                     $previous = htmlspecialchars($_GET['previous_status'] ?? 'Unknown');
                     $new = htmlspecialchars($_GET['new_status'] ?? 'Unknown');
                     $log_id = htmlspecialchars($_GET['log_id'] ?? 'N/A');
-                    echo "✅ Status successfully updated from '<strong>$previous</strong>' to '<strong>$new</strong>'<br>";
+                    echo "Status successfully updated from '<strong>$previous</strong>' to '<strong>$new</strong>'<br>";
                     echo "<small>Change logged with audit ID: #$log_id</small>";
                     break;
                 default:
@@ -259,7 +259,7 @@ include '../includes/header.php';
                     </div>
                     <div class="section-actions">
                         <a href="step_add_view.php?rocket_id=<?php echo $rocket_id; ?>" class="btn btn-primary">
-                            <i class="icon-plus"></i> Add New Production Step
+                            Add New Production Step
                         </a>
                     </div>
                 </div>
@@ -462,7 +462,7 @@ include '../includes/header.php';
         <div class="modal-footer">
             <button type="button" onclick="closeStatusModal()" class="btn btn-secondary">Cancel</button>
             <button type="submit" form="statusUpdateForm" class="btn btn-primary" id="confirmChangeBtn" disabled>
-                <i class="icon-check"></i> Confirm Status Change
+                Confirm Status Change
             </button>
         </div>
     </div>
@@ -569,7 +569,7 @@ function validateStatusForm() {
     
     // Show loading state
     const confirmBtn = document.getElementById('confirmChangeBtn');
-    confirmBtn.innerHTML = '<i class="icon-loading"></i> Updating...';
+    confirmBtn.innerHTML = 'Updating...';
     confirmBtn.disabled = true;
     
     return true;
@@ -623,13 +623,13 @@ function deleteStep(stepId) {
     const stepName = `Step #${stepId}`;
     
     // Show confirmation dialog with warning
-    const confirmMessage = `⚠️ Are you sure you want to delete ${stepName}?
+    const confirmMessage = `Are you sure you want to delete ${stepName}?
 
-⚠️ WARNING: This action cannot be undone!
+WARNING: This action cannot be undone!
 
-❌ Deletion will fail if this step has been approved (for audit purposes).
+Deletion will fail if this step has been approved (for audit purposes).
 
-🔄 If this is the last step for the rocket, the rocket status will be reset to 'Planning'.
+If this is the last step for the rocket, the rocket status will be reset to 'Planning'.
 
 Continue with deletion?`;
     
