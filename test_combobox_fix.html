@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Combobox Fix</title>
+    <style>
+        .hidden { display: none !important; }
+        .field-row { border: 1px solid #ccc; padding: 15px; margin: 10px 0; }
+        .field-input-group { margin: 10px 0; }
+        .options-json-group { border: 2px solid #007bff; padding: 10px; margin-top: 10px; }
+        button { background: #007bff; color: white; padding: 10px 15px; border: none; cursor: pointer; margin: 5px; }
+        select, textarea { width: 100%; padding: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Dynamic Combobox Field Toggle</h1>
+    
+    <button id="add-field-btn">Add New Field</button>
+    
+    <div id="fields-container"></div>
+    
+    <script>
+        let fieldCounter = 0;
+        const fieldsContainer = document.getElementById('fields-container');
+        const addFieldBtn = document.getElementById('add-field-btn');
+        
+        // Event delegation for field type changes (this will work for dynamic fields)
+        fieldsContainer.addEventListener('change', function(event) {
+            if (event.target.classList.contains('field-type-select')) {
+                const fieldId = event.target.dataset.fieldId;
+                console.log('Field type changed for field:', fieldId, 'to:', event.target.value);
+                toggleOptionsField(fieldId);
+            }
+        });
+        
+        // Add field function
+        addFieldBtn.addEventListener('click', addField);
+        
+        function addField() {
+            fieldCounter++;
+            
+            const fieldRow = document.createElement('div');
+            fieldRow.className = 'field-row';
+            fieldRow.dataset.fieldId = fieldCounter;
+            
+            fieldRow.innerHTML = `
+                <h3>Field #${fieldCounter}</h3>
+                
+                <div class="field-input-group">
+                    <label>Field Type:</label>
+                    <select name="field_type_${fieldCounter}" class="field-type-select" data-field-id="${fieldCounter}" required>
+                        <option value="">Select type...</option>
+                        <option value="text">Text Input</option>
+                        <option value="number">Number Input</option>
+                        <option value="textarea">Text Area</option>
+                        <option value="select">Dropdown Select</option>
+                        <option value="date">Date Input</option>
+                    </select>
+                </div>
+                
+                <div class="field-input-group">
+                    <div class="options-json-group hidden" id="options_group_${fieldCounter}">
+                        <label>Dropdown Options:</label>
+                        <textarea 
+                            name="options_json_${fieldCounter}" 
+                            rows="3"
+                            placeholder='Enter options as JSON array: ["Option 1", "Option 2", "Option 3"]'
+                        ></textarea>
+                        <div>Enter options as a JSON array. Example: ["Pass", "Fail", "Needs Review"]</div>
+                    </div>
+                </div>
+            `;
+            
+            fieldsContainer.appendChild(fieldRow);
+            console.log('Added field:', fieldCounter);
+        }
+        
+        function toggleOptionsField(fieldId) {
+            console.log('toggleOptionsField called for field:', fieldId);
+            
+            const fieldTypeSelect = document.querySelector(`select[name="field_type_${fieldId}"]`);
+            const optionsGroup = document.getElementById(`options_group_${fieldId}`);
+            const optionsTextarea = document.querySelector(`textarea[name="options_json_${fieldId}"]`);
+            
+            console.log('Elements found:', {
+                fieldTypeSelect: fieldTypeSelect,
+                optionsGroup: optionsGroup,
+                optionsTextarea: optionsTextarea,
+                selectedValue: fieldTypeSelect ? fieldTypeSelect.value : 'not found'
+            });
+            
+            if (fieldTypeSelect && optionsGroup) {
+                if (fieldTypeSelect.value === 'select') {
+                    console.log('Showing options group for field:', fieldId);
+                    optionsGroup.classList.remove('hidden');
+                    if (optionsTextarea) optionsTextarea.required = true;
+                } else {
+                    console.log('Hiding options group for field:', fieldId);
+                    optionsGroup.classList.add('hidden');
+                    if (optionsTextarea) {
+                        optionsTextarea.required = false;
+                        optionsTextarea.value = '';
+                    }
+                }
+            } else {
+                console.error('Could not find elements for field:', fieldId);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -239,21 +239,31 @@ function generateFormFields(templateData) {
                     input.appendChild(emptyOption);
                 }
                 
-                // Parse options from field_options JSON
-                if (field.field_options) {
+                // Parse options from field.options (already parsed) or field.options_json
+                let options = null;
+                
+                // First check if options are already parsed (field.options)
+                if (field.options && Array.isArray(field.options)) {
+                    options = field.options;
+                } else if (field.options_json) {
+                    // Fallback to parsing options_json if needed
                     try {
-                        const options = JSON.parse(field.field_options);
-                        if (Array.isArray(options)) {
-                            options.forEach(option => {
-                                const optionEl = document.createElement('option');
-                                optionEl.value = option;
-                                optionEl.textContent = option;
-                                input.appendChild(optionEl);
-                            });
-                        }
+                        options = JSON.parse(field.options_json);
                     } catch (e) {
-                        console.error('Error parsing field options:', e);
+                        console.error('Error parsing field.options_json:', e, field.options_json);
                     }
+                }
+                
+                // Add options to select element
+                if (options && Array.isArray(options)) {
+                    options.forEach(option => {
+                        const optionEl = document.createElement('option');
+                        optionEl.value = option;
+                        optionEl.textContent = option;
+                        input.appendChild(optionEl);
+                    });
+                } else {
+                    console.warn('No options found for select field:', field.field_name, field);
                 }
                 break;
                 

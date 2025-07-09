@@ -218,6 +218,14 @@ document.addEventListener('DOMContentLoaded', function() {
     addFieldBtn.addEventListener('click', addField);
     templateForm.addEventListener('submit', handleFormSubmit);
     
+    // Event delegation for field type changes (works for dynamic fields)
+    fieldsContainer.addEventListener('change', function(event) {
+        if (event.target.classList.contains('field-type-select')) {
+            const fieldId = event.target.dataset.fieldId;
+            toggleOptionsField(fieldId);
+        }
+    });
+    
     // Load existing fields if in edit mode
     <?php if ($edit_mode && !empty($template['fields'])): ?>
         loadExistingFields();
@@ -279,7 +287,7 @@ function addField() {
             
             <div class="field-input-group">
                 <label>Field Type <span style="color: #dc3545;">*</span></label>
-                <select name="field_type_${fieldCounter}" onchange="toggleOptionsField(${fieldCounter})" required>
+                <select name="field_type_${fieldCounter}" class="field-type-select" data-field-id="${fieldCounter}" required>
                     <option value="">Select type...</option>
                     <option value="text">Text Input</option>
                     <option value="number">Number Input</option>
@@ -543,7 +551,7 @@ function loadExistingFields() {
                     
                     <div class="field-input-group">
                         <label>Field Type <span style="color: #dc3545;">*</span></label>
-                        <select name="field_type_${fieldCounter}" onchange="toggleOptionsField(${fieldCounter})" required>
+                        <select name="field_type_${fieldCounter}" class="field-type-select" data-field-id="${fieldCounter}" required>
                             <option value="">Select type...</option>
                             <option value="text" <?php echo $field['field_type'] === 'text' ? 'selected' : ''; ?>>Text Input</option>
                             <option value="number" <?php echo $field['field_type'] === 'number' ? 'selected' : ''; ?>>Number Input</option>
@@ -577,6 +585,11 @@ function loadExistingFields() {
             `;
             
             fieldsContainer.appendChild(fieldRow);
+        <?php endforeach; ?>
+        
+        // Apply toggleOptionsField to all loaded fields
+        <?php foreach ($template['fields'] as $index => $field): ?>
+            toggleOptionsField(<?php echo $index + 1; ?>);
         <?php endforeach; ?>
         
         console.log('Loaded <?php echo count($template['fields']); ?> existing fields');
