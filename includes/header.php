@@ -88,7 +88,7 @@ function is_active_nav($path) {
                     <?php endif; ?>
                     
                     <?php if (has_role('engineer') || has_role('admin')): ?>
-                        <a href="/dpti-rocket-system/views/analytics_dashboard_view.php" class="nav-link <?php echo is_active_nav('/views/analytics_dashboard_view.php') ? 'nav-link-primary' : ''; ?>">📊 Analytics</a>
+                        <a href="/dpti-rocket-system/views/analytics_dashboard_view.php" class="nav-link <?php echo is_active_nav('/views/analytics_dashboard_view.php') ? 'nav-link-primary' : ''; ?>">Analytics</a>
                     <?php endif; ?>
                     
                     <?php if (has_role('admin')): ?>
