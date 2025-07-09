@@ -183,8 +183,8 @@ $final_approver = $report_data['final_approver'] ?? null;
         <button onclick="window.print()" class="btn btn-primary">
             🖨️ Print Report
         </button>
-        <a href="rocket_detail_view.php?id=<?php echo $rocket['rocket_id']; ?>" class="btn btn-secondary">
-            ← Back to Rocket
+        <a href="/dpti-rocket-system/views/rocket_detail_view.php?id=<?php echo $rocket['rocket_id']; ?>" class="btn btn-secondary">
+            ← Back to Rocket Detail
         </a>
     </div>
 

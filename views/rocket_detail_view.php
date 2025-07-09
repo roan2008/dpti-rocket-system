@@ -71,7 +71,7 @@ include '../includes/header.php';
                 
                 <!-- PHASE 2: Conditional Motor Charging Report Button -->
                 <?php if ($can_generate_motor_charging_report): ?>
-                    <a href="motor_charging_report_view.php?rocket_id=<?php echo $rocket_id; ?>" 
+                    <a href="../controllers/motor_charging_report_controller.php?rocket_id=<?php echo $rocket_id; ?>" 
                        class="btn btn-success" 
                        target="_blank"
                        title="Generate Motor Charging Report (All required steps approved)">
