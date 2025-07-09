@@ -43,3 +43,26 @@ build/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Development and debug files
+test_*.html
+test_*.php
+debug_*.php
+check_*.php
+create_test_data.php
+demo_workflow.php
+schema_check.php
+query
+*.png
+*.jpg
+*.jpeg
+*.gif
+/tests/debug_*.php
+/tests/check_*.php
+/tests/test_*.php
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
