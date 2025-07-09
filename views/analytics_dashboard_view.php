@@ -534,10 +534,76 @@ function generateCSVReport() {
 
 <!-- Analytics Dashboard Specific Styling -->
 <style>
+/* Page Header */
+.page-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.page-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-title-section h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.page-description {
+    margin: 0.5rem 0 0 0;
+    color: #6c757d;
+    font-size: 1.1rem;
+    font-weight: 400;
+}
+
+.page-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+}
+
 /* Analytics Summary Cards */
 .analytics-summary {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
@@ -545,34 +611,94 @@ function generateCSVReport() {
 .summary-card {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 1.5rem;
-    border-radius: 12px;
+    padding: 2rem;
+    border-radius: 16px;
     display: flex;
+    flex-direction: column;
     align-items: center;
+    text-align: center;
     gap: 1rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    pointer-events: none;
 }
 
 .summary-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-5px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
 }
 
 .summary-card .card-icon {
-    font-size: 2rem;
-    opacity: 0.8;
+    font-size: 3rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.summary-card .card-content {
+    z-index: 1;
 }
 
 .summary-card .card-content h3 {
     margin: 0;
-    font-size: 2rem;
-    font-weight: bold;
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .summary-card .card-content p {
     margin: 0;
-    opacity: 0.9;
-    font-size: 0.9rem;
+    opacity: 0.95;
+    font-size: 1rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Different color schemes for cards */
+.summary-card:nth-child(1) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.summary-card:nth-child(2) {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.summary-card:nth-child(3) {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.summary-card:nth-child(4) {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.summary-card:nth-child(5) {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.summary-card:nth-child(6) {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    color: #333;
 }
 
 /* Analytics Grid */
@@ -791,18 +917,38 @@ function generateCSVReport() {
 }
 
 /* Responsive Design */
+@media (max-width: 1200px) {
+    .analytics-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 768px) {
     .analytics-summary {
         grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .summary-card {
+        padding: 1.5rem;
+    }
+    
+    .summary-card .card-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 2.5rem;
+    }
+    
+    .summary-card .card-content h3 {
+        font-size: 2rem;
+    }
+    
+    .summary-card .card-content p {
+        font-size: 0.9rem;
     }
     
     .analytics-grid {
         grid-template-columns: 1fr;
-    }
-    
-    .summary-card {
-        flex-direction: column;
-        text-align: center;
     }
     
     .chart-container {
@@ -815,8 +961,36 @@ function generateCSVReport() {
         grid-template-columns: 1fr;
     }
     
+    .summary-card {
+        padding: 1.25rem;
+    }
+    
+    .summary-card .card-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 2rem;
+    }
+    
+    .summary-card .card-content h3 {
+        font-size: 1.75rem;
+    }
+    
     .metrics-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        padding: 1rem;
+    }
+    
+    .page-header-content {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .page-actions {
+        width: 100%;
+        justify-content: center;
     }
 }
 </style>
