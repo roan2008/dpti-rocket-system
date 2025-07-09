@@ -1,0 +1,289 @@
+/* DPTI Rocket System - Search and Filter Styles */
+
+/* Enhanced Search and Filter Container */
+.filters-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+    border: 2px solid #007bff !important;
+    border-radius: 12px !important;
+    padding: 2rem !important;
+    margin-bottom: 2rem !important;
+    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.15) !important;
+    transition: all 0.3s ease !important;
+}
+
+.filters-section:hover {
+    border-color: #0056b3 !important;
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.2) !important;
+}
+
+.filters-form {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+}
+
+/* Filter Rows */
+.filter-row {
+    display: flex !important;
+    align-items: end !important;
+    gap: 1.5rem !important;
+    flex-wrap: wrap !important;
+}
+
+/* Search Group */
+.search-group {
+    flex: 1 !important;
+    min-width: 320px !important;
+}
+
+.search-group label {
+    display: block !important;
+    margin-bottom: 0.5rem !important;
+    font-weight: 700 !important;
+    color: #495057 !important;
+    font-size: 0.9rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.search-input-group {
+    display: flex !important;
+    gap: 0.75rem !important;
+    align-items: stretch !important;
+}
+
+.search-input-group input {
+    flex: 1 !important;
+    padding: 0.75rem 1rem !important;
+    border: 2px solid #ced4da !important;
+    border-radius: 8px !important;
+    font-size: 0.9rem !important;
+    background: white !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease !important;
+}
+
+.search-input-group input:focus {
+    border-color: #007bff !important;
+    outline: 0 !important;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25) !important;
+    transform: translateY(-1px) !important;
+}
+
+.search-input-group input::placeholder {
+    color: #8a8a8a !important;
+    font-style: italic !important;
+}
+
+/* Filter Groups */
+.filter-group {
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 160px !important;
+}
+
+.filter-group label {
+    margin-bottom: 0.5rem !important;
+    font-weight: 700 !important;
+    color: #495057 !important;
+    font-size: 0.85rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.filter-group select,
+.filter-group input[type="date"] {
+    padding: 0.75rem 1rem !important;
+    border: 2px solid #ced4da !important;
+    border-radius: 8px !important;
+    font-size: 0.85rem !important;
+    background: white !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.filter-group select:focus,
+.filter-group input[type="date"]:focus {
+    border-color: #007bff !important;
+    outline: 0 !important;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25) !important;
+    transform: translateY(-1px) !important;
+}
+
+.filter-group select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+    background-position: right 8px center !important;
+    background-repeat: no-repeat !important;
+    background-size: 16px 12px !important;
+    padding-right: 40px !important;
+    appearance: none !important;
+}
+
+/* Filter Actions */
+.filter-actions {
+    display: flex !important;
+    align-items: end !important;
+    gap: 0.75rem !important;
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
+}
+
+.filter-actions .btn {
+    padding: 0.75rem 1.5rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+    cursor: pointer !important;
+}
+
+.filter-actions .btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.filter-actions .btn-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.filter-actions .btn-primary:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #004085 100%) !important;
+}
+
+.filter-actions .btn-secondary {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.filter-actions .btn-secondary:hover {
+    background: linear-gradient(135deg, #495057 0%, #343a40 100%) !important;
+}
+
+.btn-outline {
+    background: white !important;
+    border: 2px solid #6c757d !important;
+    color: #6c757d !important;
+    text-decoration: none !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 1.5rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+.btn-outline:hover {
+    background: #6c757d !important;
+    color: white !important;
+    text-decoration: none !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Enhanced Badge Styles */
+.badge {
+    display: inline-block !important;
+    padding: 0.4rem 0.8rem !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    vertical-align: baseline !important;
+    border-radius: 50px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease !important;
+}
+
+.badge:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.badge-active {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    color: white !important;
+    border: 1px solid rgba(40, 167, 69, 0.3) !important;
+}
+
+.badge-inactive {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+    color: white !important;
+    border: 1px solid rgba(108, 117, 125, 0.3) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .filters-section {
+        padding: 1.5rem !important;
+    }
+    
+    .filter-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 1rem !important;
+    }
+    
+    .search-group {
+        min-width: unset !important;
+    }
+    
+    .search-input-group {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+    
+    .filter-group {
+        min-width: unset !important;
+    }
+    
+    .filter-actions {
+        margin-left: unset !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
+        flex-wrap: wrap !important;
+    }
+    
+    .filter-actions .btn {
+        flex: 1 !important;
+        min-width: 120px !important;
+        justify-content: center !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .filters-section {
+        padding: 1rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+    
+    .search-input-group {
+        gap: 0.75rem !important;
+    }
+    
+    .filter-actions {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+    }
+    
+    .filter-actions .btn {
+        width: 100% !important;
+        max-width: none !important;
+    }
+}

@@ -43,6 +43,61 @@ $available_statuses = get_rocket_statuses($pdo);
 include 'includes/header.php';
 ?>
 
+<style>
+/* Emergency CSS Override for Search Filters */
+.filters-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+    border: 2px solid #007bff !important;
+    border-radius: 12px !important;
+    padding: 2rem !important;
+    margin-bottom: 2rem !important;
+    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.15) !important;
+}
+
+.search-input-group input {
+    padding: 0.75rem 1rem !important;
+    border: 2px solid #ced4da !important;
+    border-radius: 8px !important;
+    font-size: 0.9rem !important;
+    background: white !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.search-input-group input:focus {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25) !important;
+    transform: translateY(-1px) !important;
+}
+
+.filter-group select,
+.filter-group input {
+    padding: 0.75rem 1rem !important;
+    border: 2px solid #ced4da !important;
+    border-radius: 8px !important;
+    font-size: 0.85rem !important;
+    background: white !important;
+}
+
+.filter-actions .btn {
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    border: none !important;
+    color: white !important;
+}
+
+.btn-outline {
+    background: white !important;
+    border: 2px solid #6c757d !important;
+    color: #6c757d !important;
+}
+</style>
+
 <div class="container">
     <!-- GOLDEN RULE #2: Consistent Page Header -->
     <div class="page-header">

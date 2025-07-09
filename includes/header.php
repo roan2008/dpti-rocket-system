@@ -51,8 +51,9 @@ function is_active_nav($path) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>DPTI Rocket System</title>
-    <link rel="stylesheet" href="/dpti-rocket-system/assets/css/style.css">
-    <link rel="stylesheet" href="/dpti-rocket-system/assets/css/design-system-improvements.css">
+    <link rel="stylesheet" href="/dpti-rocket-system/assets/css/style.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="/dpti-rocket-system/assets/css/design-system-improvements.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="/dpti-rocket-system/assets/css/search-filters.css?v=<?php echo time(); ?>">
 </head>
 <body>
     <!-- Navigation Bar -->
