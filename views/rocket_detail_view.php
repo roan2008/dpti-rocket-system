@@ -322,7 +322,13 @@ include '../includes/header.php';
                                                             <?php foreach ($step_data as $key => $value): ?>
                                                                 <tr>
                                                                     <td class="data-key"><?php echo htmlspecialchars($key); ?>:</td>
-                                                                    <td class="data-value"><?php echo htmlspecialchars($value); ?></td>
+                                                                    <td class="data-value"><?php 
+                                                                        if (is_array($value) || is_object($value)) {
+                                                                            echo htmlspecialchars(json_encode($value, JSON_UNESCAPED_UNICODE));
+                                                                        } else {
+                                                                            echo htmlspecialchars((string)$value);
+                                                                        }
+                                                                    ?></td>
                                                                 </tr>
                                                             <?php endforeach; ?>
                                                         </table>
