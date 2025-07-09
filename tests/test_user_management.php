@@ -9,8 +9,8 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Include required files
-require_once '../includes/db_connect.php';
-require_once '../includes/user_functions.php';
+require_once __DIR__ . '/../includes/db_connect.php';
+require_once __DIR__ . '/../includes/user_functions.php';
 
 echo "\n🧪 USER MANAGEMENT TEST SUITE\n";
 echo "========================================\n";

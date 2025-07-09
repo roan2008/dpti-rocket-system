@@ -37,6 +37,10 @@ function is_active_nav($path) {
         return true;
     }
     
+    if ($path === '/views/analytics_dashboard_view.php' && strpos($current_page, 'analytics') !== false) {
+        return true;
+    }
+    
     return false;
 }
 ?>
@@ -81,6 +85,10 @@ function is_active_nav($path) {
                                 <span class="nav-badge"><?php echo $pending_count; ?></span>
                             <?php endif; ?>
                         </a>
+                    <?php endif; ?>
+                    
+                    <?php if (has_role('engineer') || has_role('admin')): ?>
+                        <a href="/dpti-rocket-system/views/analytics_dashboard_view.php" class="nav-link <?php echo is_active_nav('/views/analytics_dashboard_view.php') ? 'nav-link-primary' : ''; ?>">📊 Analytics</a>
                     <?php endif; ?>
                     
                     <?php if (has_role('admin')): ?>
