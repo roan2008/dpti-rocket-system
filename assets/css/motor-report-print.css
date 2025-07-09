@@ -1,0 +1,350 @@
+/* ==============================================
+   MOTOR CHARGING REPORT - PRINT CSS
+   Optimized for professional printing
+   ============================================== */
+
+/* Screen-only styles */
+@media screen {
+    .motor-report-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+    }
+    
+    .motor-report-actions {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        display: flex;
+        gap: 1rem;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .motor-report-actions .btn {
+        min-width: 120px;
+        text-align: center;
+    }
+}
+
+/* Print-specific styles */
+@media print {
+    /* Hide all screen elements */
+    .main-nav,
+    .motor-report-actions,
+    .no-print,
+    .btn,
+    button,
+    input,
+    .search-filters,
+    .sidebar,
+    .footer {
+        display: none !important;
+    }
+    
+    /* Reset everything for print */
+    * {
+        margin: 0;
+        padding: 0;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        background-image: none !important;
+    }
+    
+    /* Page setup */
+    @page {
+        size: A4;
+        margin: 20mm 15mm;
+    }
+    
+    html, body {
+        width: 100%;
+        height: 100%;
+        font-family: 'Times New Roman', 'DejaVu Serif', serif;
+        font-size: 11pt;
+        line-height: 1.4;
+        color: #000;
+        background: white;
+    }
+    
+    .motor-report-container {
+        max-width: none;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background: white;
+        box-shadow: none;
+    }
+    
+    /* Typography for print */
+    h1, h2, h3, h4, h5, h6 {
+        color: #000;
+        page-break-after: avoid;
+        font-weight: bold;
+    }
+    
+    .motor-report-title {
+        font-size: 16pt;
+        text-align: center;
+        margin-bottom: 1rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .motor-report-subtitle {
+        font-size: 12pt;
+        text-align: center;
+        margin-bottom: 2rem;
+        font-weight: normal;
+    }
+    
+    .motor-section-title {
+        font-size: 12pt;
+        margin: 1.5rem 0 0.5rem 0;
+        padding-bottom: 0.2rem;
+        border-bottom: 1px solid #000;
+        font-weight: bold;
+        page-break-after: avoid;
+    }
+    
+    /* Table styles for print */
+    .motor-report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.5rem 0 1rem 0;
+        font-size: 9pt;
+        page-break-inside: auto;
+    }
+    
+    .motor-report-table th,
+    .motor-report-table td {
+        border: 1px solid #000;
+        padding: 4px 6px;
+        text-align: left;
+        vertical-align: top;
+        word-wrap: break-word;
+    }
+    
+    .motor-report-table th {
+        background-color: #f0f0f0 !important;
+        font-weight: bold;
+        font-size: 9pt;
+        text-align: center;
+    }
+    
+    .motor-report-table tbody tr {
+        page-break-inside: avoid;
+    }
+    
+    /* Info grid for print */
+    .motor-info-grid {
+        display: table;
+        width: 100%;
+        margin: 0.5rem 0;
+    }
+    
+    .motor-info-row {
+        display: table-row;
+    }
+    
+    .motor-info-cell {
+        display: table-cell;
+        width: 50%;
+        padding: 0.3rem;
+        border: 1px solid #ddd;
+        vertical-align: top;
+    }
+    
+    .motor-info-label {
+        font-weight: bold;
+        display: inline-block;
+        min-width: 120px;
+    }
+    
+    /* Status colors for print */
+    .motor-status-approved {
+        color: #000;
+        font-weight: bold;
+        text-decoration: none;
+    }
+    
+    .motor-status-approved::before {
+        content: "✓ ";
+    }
+    
+    .motor-status-pending {
+        color: #000;
+        font-weight: bold;
+    }
+    
+    .motor-status-pending::before {
+        content: "⏳ ";
+    }
+    
+    .motor-status-rejected {
+        color: #000;
+        font-weight: bold;
+    }
+    
+    .motor-status-rejected::before {
+        content: "✗ ";
+    }
+    
+    /* Signatures for print */
+    .motor-signatures {
+        margin-top: 3rem;
+        display: table;
+        width: 100%;
+        page-break-inside: avoid;
+    }
+    
+    .motor-signature-row {
+        display: table-row;
+    }
+    
+    .motor-signature-cell {
+        display: table-cell;
+        width: 33.33%;
+        text-align: center;
+        padding: 2rem 1rem 0 1rem;
+        border-top: 1px solid #000;
+        vertical-align: top;
+    }
+    
+    .motor-signature-title {
+        font-weight: bold;
+        font-size: 10pt;
+        margin-bottom: 0.5rem;
+    }
+    
+    .motor-signature-info {
+        font-size: 9pt;
+        line-height: 1.6;
+    }
+    
+    /* Page break controls */
+    .motor-page-break {
+        page-break-before: always;
+    }
+    
+    .motor-no-page-break {
+        page-break-inside: avoid;
+    }
+    
+    .motor-keep-together {
+        page-break-inside: avoid;
+        page-break-after: avoid;
+    }
+    
+    /* Footer for print */
+    .motor-report-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 8pt;
+        border-top: 1px solid #000;
+        padding-top: 0.5rem;
+        background: white;
+    }
+    
+    /* Header metadata */
+    .motor-report-meta {
+        font-size: 10pt;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+    
+    /* Technical details table */
+    .motor-technical-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.5rem 0;
+        font-size: 8pt;
+    }
+    
+    .motor-technical-table th,
+    .motor-technical-table td {
+        border: 1px solid #666;
+        padding: 3px 5px;
+        text-align: left;
+        vertical-align: top;
+    }
+    
+    .motor-technical-table th {
+        background-color: #e8e8e8 !important;
+        font-weight: bold;
+        width: 30%;
+    }
+    
+    /* JSON formatting */
+    .motor-json-data {
+        font-family: 'Courier New', monospace;
+        font-size: 8pt;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+    
+    /* Summary box */
+    .motor-summary-box {
+        border: 2px solid #000;
+        padding: 1rem;
+        margin: 1rem 0;
+        background-color: #f9f9f9 !important;
+        page-break-inside: avoid;
+    }
+    
+    .motor-summary-title {
+        font-size: 11pt;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+    }
+}
+
+/* Fallback styles for older browsers */
+.motor-report-print-fallback {
+    display: none;
+}
+
+@media print and (-webkit-min-device-pixel-ratio: 0) {
+    .motor-report-print-fallback {
+        display: block;
+    }
+}
+
+/* Color adjustments for black and white printing */
+@media print and (monochrome) {
+    .motor-status-approved,
+    .motor-status-pending,
+    .motor-status-rejected {
+        color: #000 !important;
+        background: none !important;
+    }
+    
+    .motor-report-table th {
+        background-color: #e0e0e0 !important;
+    }
+}
+
+/* High contrast mode */
+@media print and (prefers-contrast: high) {
+    .motor-report-table th,
+    .motor-report-table td {
+        border: 2px solid #000;
+    }
+    
+    .motor-section-title {
+        border-bottom: 2px solid #000;
+    }
+}

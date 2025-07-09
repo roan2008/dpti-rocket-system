@@ -228,6 +228,49 @@
     border: 1px solid rgba(108, 117, 125, 0.3) !important;
 }
 
+/* Enhanced Button Styles for Motor Charging Report */
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    border: none !important;
+    color: white !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 3px 6px rgba(40, 167, 69, 0.3) !important;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 12px rgba(40, 167, 69, 0.4) !important;
+    text-decoration: none !important;
+    color: white !important;
+}
+
+.btn-outline-secondary {
+    background: transparent !important;
+    border: 2px solid #6c757d !important;
+    color: #6c757d !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.btn-outline-secondary[disabled] {
+    pointer-events: none !important;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .filters-section {

@@ -15,6 +15,7 @@ require_once '../includes/db_connect.php';
 require_once '../includes/user_functions.php';
 require_once '../includes/rocket_functions.php';
 require_once '../includes/production_functions.php';
+require_once '../includes/report_functions.php';
 
 // Check if user is logged in
 if (!is_logged_in()) {
@@ -46,6 +47,9 @@ $can_edit = has_role('admin') || has_role('engineer');
 // Check if this is edit mode
 $edit_mode = isset($_GET['edit']) && $_GET['edit'] === '1' && $can_edit;
 
+// PHASE 2: Check if Motor Charging Report can be generated
+$can_generate_motor_charging_report = canGenerateMotorChargingReport($pdo, $rocket_id);
+
 include '../includes/header.php';
 ?>
 
@@ -64,6 +68,23 @@ include '../includes/header.php';
                 <button onclick="openStatusUpdateModal()" class="btn btn-primary">
                     Manual Status Update
                 </button>
+                
+                <!-- PHASE 2: Conditional Motor Charging Report Button -->
+                <?php if ($can_generate_motor_charging_report): ?>
+                    <a href="motor_charging_report_view.php?rocket_id=<?php echo $rocket_id; ?>" 
+                       class="btn btn-success" 
+                       target="_blank"
+                       title="Generate Motor Charging Report (All required steps approved)">
+                        🔧 Print Motor Charging Report
+                    </a>
+                <?php else: ?>
+                    <button class="btn btn-outline-secondary" 
+                            disabled 
+                            title="Motor Charging Report requires all mandatory steps to be completed and approved">
+                        🔧 Motor Charging Report (Unavailable)
+                    </button>
+                <?php endif; ?>
+                
                 <?php if ($can_edit): ?>
                     <a href="?id=<?php echo $rocket_id; ?>&edit=1" class="btn btn-secondary">
                         Edit Rocket
