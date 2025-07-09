@@ -26,8 +26,27 @@ if (!has_role('admin') && !has_role('engineer')) {
     exit;
 }
 
-// Get all active templates
-$templates = getAllActiveTemplates($pdo);
+// Get filter parameters
+$search_term = trim($_GET['search'] ?? '');
+$status_filter = trim($_GET['status'] ?? 'all');
+$creator_filter = trim($_GET['creator'] ?? '');
+$date_from = trim($_GET['date_from'] ?? '');
+$date_to = trim($_GET['date_to'] ?? '');
+$sort_by = trim($_GET['sort_by'] ?? 'step_name');
+$sort_order = trim($_GET['sort_order'] ?? 'ASC');
+
+// Get templates based on filters
+if (!empty($search_term) || $status_filter !== 'all' || !empty($creator_filter) || !empty($date_from) || !empty($date_to)) {
+    $templates = search_templates($pdo, $search_term, $status_filter, $creator_filter, $date_from, $date_to, $sort_by, $sort_order);
+    $filtered_count = count($templates);
+} else {
+    $templates = getAllTemplates($pdo);
+    $filtered_count = count($templates);
+}
+
+// Get total template count and available creators for filters
+$total_template_count = count(getAllTemplates($pdo));
+$available_creators = get_template_creators($pdo);
 
 // Get user details for created_by lookup
 function getUserName($pdo, $user_id) {
@@ -130,9 +149,121 @@ include '../includes/header.php';
     <div class="section">
         <div class="section-header">
             <h2>Step Templates</h2>
+            <div class="section-actions">
+                <span class="section-subtitle">
+                    <?php if (!empty($search_term) || $status_filter !== 'all' || !empty($creator_filter) || !empty($date_from) || !empty($date_to)): ?>
+                        <?php echo $filtered_count; ?> of <?php echo $total_template_count; ?> templates shown
+                    <?php else: ?>
+                        <?php echo count($templates); ?> templates total
+                    <?php endif; ?>
+                </span>
+            </div>
         </div>
 
-        <?php if (!empty($templates)): ?>
+        <!-- Search and Filter Section -->
+        <div class="filters-section">
+            <form method="GET" class="filters-form">
+                <div class="filter-row">
+                    <div class="search-group">
+                        <label for="search_input">Search Templates:</label>
+                        <div class="search-input-group">
+                            <input 
+                                type="text" 
+                                id="search_input" 
+                                name="search" 
+                                placeholder="Search by step name or description..." 
+                                value="<?php echo htmlspecialchars($search_term); ?>"
+                            >
+                            <button type="submit" class="btn btn-secondary">Search</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="status_filter">Status:</label>
+                        <select id="status_filter" name="status">
+                            <option value="all" <?php echo ($status_filter === 'all') ? 'selected' : ''; ?>>All Statuses</option>
+                            <option value="active" <?php echo ($status_filter === 'active') ? 'selected' : ''; ?>>Active Only</option>
+                            <option value="inactive" <?php echo ($status_filter === 'inactive') ? 'selected' : ''; ?>>Inactive Only</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="creator_filter">Created By:</label>
+                        <select id="creator_filter" name="creator">
+                            <option value="">All Creators</option>
+                            <?php foreach ($available_creators as $creator): ?>
+                                <option value="<?php echo $creator['user_id']; ?>"
+                                        <?php echo ($creator_filter == $creator['user_id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($creator['full_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="date_from">Created From:</label>
+                        <input 
+                            type="date" 
+                            id="date_from" 
+                            name="date_from" 
+                            value="<?php echo htmlspecialchars($date_from); ?>"
+                        >
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="date_to">Created To:</label>
+                        <input 
+                            type="date" 
+                            id="date_to" 
+                            name="date_to" 
+                            value="<?php echo htmlspecialchars($date_to); ?>"
+                        >
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="sort_by">Sort By:</label>
+                        <select id="sort_by" name="sort_by">
+                            <option value="step_name" <?php echo ($sort_by === 'step_name') ? 'selected' : ''; ?>>Template Name</option>
+                            <option value="created_at" <?php echo ($sort_by === 'created_at') ? 'selected' : ''; ?>>Created Date</option>
+                            <option value="created_by" <?php echo ($sort_by === 'created_by') ? 'selected' : ''; ?>>Creator</option>
+                            <option value="is_active" <?php echo ($sort_by === 'is_active') ? 'selected' : ''; ?>>Status</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="sort_order">Order:</label>
+                        <select id="sort_order" name="sort_order">
+                            <option value="ASC" <?php echo ($sort_order === 'ASC') ? 'selected' : ''; ?>>A-Z / Oldest First</option>
+                            <option value="DESC" <?php echo ($sort_order === 'DESC') ? 'selected' : ''; ?>>Z-A / Newest First</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                        <?php if (!empty($search_term) || $status_filter !== 'all' || !empty($creator_filter) || !empty($date_from) || !empty($date_to) || $sort_by !== 'step_name' || $sort_order !== 'ASC'): ?>
+                            <a href="templates_list_view.php" class="btn btn-outline">Clear All</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <?php if (empty($templates)): ?>
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <?php if (!empty($search_term) || $status_filter !== 'all' || !empty($creator_filter) || !empty($date_from) || !empty($date_to)): ?>
+                    <h3>No templates match your filters</h3>
+                    <p>Try adjusting your search criteria or clearing the filters.</p>
+                    <a href="templates_list_view.php" class="btn btn-secondary">Clear Filters</a>
+                <?php else: ?>
+                    <h3>No step templates found</h3>
+                    <p>Create your first step template to get started.</p>
+                    <a href="template_form_view.php" class="btn btn-primary">Create First Template</a>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
             <div class="section-content">
                 <div class="table-responsive">
                     <table class="table-modern">
@@ -167,13 +298,17 @@ include '../includes/header.php';
                                         ?>
                                     </td>
                                     <td class="created-by">
-                                        <?php echo htmlspecialchars(getUserName($pdo, $template['created_by'])); ?>
+                                        <?php echo htmlspecialchars($template['creator_name'] ?? 'Unknown User'); ?>
                                     </td>
                                     <td class="created-date">
                                         <?php echo date('M j, Y', strtotime($template['created_at'])); ?>
                                     </td>
                                     <td class="template-status">
-                                        <span class="badge badge-active">Active</span>
+                                        <?php if ($template['is_active']): ?>
+                                            <span class="badge badge-active">Active</span>
+                                        <?php else: ?>
+                                            <span class="badge badge-inactive">Inactive</span>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="actions">
                                         <div class="btn-group">
@@ -191,14 +326,6 @@ include '../includes/header.php';
                         </tbody>
                     </table>
                 </div>
-            </div>
-        <?php else: ?>
-            <div class="empty-state">
-                <h3>No step templates found</h3>
-                <p>Get started by creating your first step template to standardize your production processes.</p>
-                <?php if (has_role('admin') || has_role('engineer')): ?>
-                    <a href="template_form_view.php" class="btn btn-primary">Create Your First Template</a>
-                <?php endif; ?>
             </div>
         <?php endif; ?>
     </div>

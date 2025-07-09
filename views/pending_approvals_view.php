@@ -26,13 +26,36 @@ if (!has_role('engineer') && !has_role('admin')) {
     exit;
 }
 
+// Get filter parameters
+$search_term = trim($_GET['search'] ?? '');
+$step_filter = trim($_GET['step'] ?? '');
+$rocket_filter = trim($_GET['rocket'] ?? '');
+$staff_filter = trim($_GET['staff'] ?? '');
+$date_from = trim($_GET['date_from'] ?? '');
+$date_to = trim($_GET['date_to'] ?? '');
+$sort_by = trim($_GET['sort_by'] ?? 'step_timestamp');
+$sort_order = trim($_GET['sort_order'] ?? 'DESC');
+
 // Get approval statistics and pending approvals (only if not already loaded by controller)
 if (!isset($approval_stats)) {
     $approval_stats = getApprovalStatistics($pdo);
 }
-if (!isset($pending_approvals)) {
-    $pending_approvals = getPendingApprovals($pdo);
+
+// Get pending approvals based on filters
+if (!empty($search_term) || !empty($step_filter) || !empty($rocket_filter) || !empty($staff_filter) || !empty($date_from) || !empty($date_to)) {
+    $pending_approvals = search_pending_approvals($pdo, $search_term, $step_filter, $rocket_filter, $staff_filter, $date_from, $date_to, $sort_by, $sort_order);
+    $filtered_count = count($pending_approvals);
+} else {
+    if (!isset($pending_approvals)) {
+        $pending_approvals = getPendingApprovals($pdo);
+    }
+    $filtered_count = count($pending_approvals);
 }
+
+// Get filter options
+$available_step_types = get_pending_step_types($pdo);
+$available_rockets = get_rockets_with_pending_approvals($pdo);
+$available_staff = get_staff_with_pending_approvals($pdo);
 
 // Include header
 include '../includes/header.php';
@@ -108,17 +131,144 @@ include '../includes/header.php';
         </div>
     <?php endif; ?>
 
+    <!-- Search and Filter Section -->
+    <div class="filters-section">
+        <form method="GET" class="filters-form">
+            <div class="filter-row">
+                <div class="search-group">
+                    <label for="search_input">Search Approvals:</label>
+                    <div class="search-input-group">
+                        <input 
+                            type="text" 
+                            id="search_input" 
+                            name="search" 
+                            placeholder="Search by rocket, project, step, or staff..." 
+                            value="<?php echo htmlspecialchars($search_term); ?>"
+                        >
+                        <button type="submit" class="btn btn-secondary">Search</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="step_filter">Step Type:</label>
+                    <select id="step_filter" name="step">
+                        <option value="">All Step Types</option>
+                        <?php foreach ($available_step_types as $step_type): ?>
+                            <option value="<?php echo htmlspecialchars($step_type); ?>"
+                                    <?php echo ($step_filter === $step_type) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($step_type); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="rocket_filter">Rocket:</label>
+                    <select id="rocket_filter" name="rocket">
+                        <option value="">All Rockets</option>
+                        <?php foreach ($available_rockets as $rocket): ?>
+                            <option value="<?php echo $rocket['rocket_id']; ?>"
+                                    <?php echo ($rocket_filter == $rocket['rocket_id']) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($rocket['serial_number'] . ' - ' . $rocket['project_name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="staff_filter">Staff Member:</label>
+                    <select id="staff_filter" name="staff">
+                        <option value="">All Staff</option>
+                        <?php foreach ($available_staff as $staff): ?>
+                            <option value="<?php echo $staff['user_id']; ?>"
+                                    <?php echo ($staff_filter == $staff['user_id']) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($staff['full_name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="date_from">Recorded From:</label>
+                    <input 
+                        type="date" 
+                        id="date_from" 
+                        name="date_from" 
+                        value="<?php echo htmlspecialchars($date_from); ?>"
+                    >
+                </div>
+                
+                <div class="filter-group">
+                    <label for="date_to">Recorded To:</label>
+                    <input 
+                        type="date" 
+                        id="date_to" 
+                        name="date_to" 
+                        value="<?php echo htmlspecialchars($date_to); ?>"
+                    >
+                </div>
+                
+                <div class="filter-group">
+                    <label for="sort_by">Sort By:</label>
+                    <select id="sort_by" name="sort_by">
+                        <option value="step_timestamp" <?php echo ($sort_by === 'step_timestamp') ? 'selected' : ''; ?>>Recorded Date</option>
+                        <option value="serial_number" <?php echo ($sort_by === 'serial_number') ? 'selected' : ''; ?>>Rocket Serial</option>
+                        <option value="step_name" <?php echo ($sort_by === 'step_name') ? 'selected' : ''; ?>>Step Name</option>
+                        <option value="staff_name" <?php echo ($sort_by === 'staff_name') ? 'selected' : ''; ?>>Staff Name</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="sort_order">Order:</label>
+                    <select id="sort_order" name="sort_order">
+                        <option value="DESC" <?php echo ($sort_order === 'DESC') ? 'selected' : ''; ?>>Newest First</option>
+                        <option value="ASC" <?php echo ($sort_order === 'ASC') ? 'selected' : ''; ?>>Oldest First</option>
+                    </select>
+                </div>
+                
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <?php if (!empty($search_term) || !empty($step_filter) || !empty($rocket_filter) || !empty($staff_filter) || !empty($date_from) || !empty($date_to) || $sort_by !== 'step_timestamp' || $sort_order !== 'DESC'): ?>
+                        <a href="pending_approvals_view.php" class="btn btn-outline">Clear All</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </form>
+    </div>
+
     <div class="approvals-content">
+        <div class="approvals-summary">
+            <h3>Pending Approvals</h3>
+            <p class="approvals-count">
+                <?php if (!empty($search_term) || !empty($step_filter) || !empty($rocket_filter) || !empty($staff_filter) || !empty($date_from) || !empty($date_to)): ?>
+                    <?php echo $filtered_count; ?> of <?php echo $approval_stats['pending_count']; ?> pending approvals shown
+                <?php else: ?>
+                    <?php echo count($pending_approvals); ?> pending approvals
+                <?php endif; ?>
+            </p>
+        </div>
+        
         <?php if (empty($pending_approvals)): ?>
             <!-- Empty State -->
             <div class="empty-state">
                 <div class="empty-icon">✅</div>
-                <h3>All Caught Up!</h3>
-                <p>There are no production steps awaiting approval at this time.</p>
-                <div class="empty-actions">
-                    <a href="../dashboard.php" class="btn btn-primary">Back to Dashboard</a>
-                    <a href="../views/production_steps_view.php" class="btn btn-secondary">View All Steps</a>
-                </div>
+                <?php if (!empty($search_term) || !empty($step_filter) || !empty($rocket_filter) || !empty($staff_filter) || !empty($date_from) || !empty($date_to)): ?>
+                    <h3>No approvals match your filters</h3>
+                    <p>Try adjusting your search criteria or clearing the filters.</p>
+                    <div class="empty-actions">
+                        <a href="pending_approvals_view.php" class="btn btn-secondary">Clear Filters</a>
+                        <a href="../dashboard.php" class="btn btn-primary">Back to Dashboard</a>
+                    </div>
+                <?php else: ?>
+                    <h3>All Caught Up!</h3>
+                    <p>There are no production steps awaiting approval at this time.</p>
+                    <div class="empty-actions">
+                        <a href="../dashboard.php" class="btn btn-primary">Back to Dashboard</a>
+                        <a href="../views/production_steps_view.php" class="btn btn-secondary">View All Steps</a>
+                    </div>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <!-- Pending Approvals Table -->

@@ -402,4 +402,170 @@ function getAllProductionSteps($pdo) {
         return array();
     }
 }
+
+/**
+ * Search and filter production steps
+ * 
+ * @param PDO $pdo Database connection
+ * @param string $search_term Search term for step name, staff name, or rocket serial
+ * @param string $step_filter Filter by step type
+ * @param string $rocket_filter Filter by rocket ID
+ * @param string $staff_filter Filter by staff member ID
+ * @param string $date_from Filter by date from (YYYY-MM-DD)
+ * @param string $date_to Filter by date to (YYYY-MM-DD)
+ * @param string $sort_by Sort field (step_timestamp, step_name, staff_full_name, rocket_serial)
+ * @param string $sort_order Sort order (ASC or DESC)
+ * @return array Array of filtered production steps
+ */
+function search_production_steps($pdo, $search_term = '', $step_filter = '', $rocket_filter = '', $staff_filter = '', $date_from = '', $date_to = '', $sort_by = 'step_timestamp', $sort_order = 'DESC') {
+    try {
+        // Build the WHERE clause
+        $where_conditions = [];
+        $params = [];
+        
+        // Search term for step name, staff name, or rocket serial
+        if (!empty($search_term)) {
+            $where_conditions[] = "(ps.step_name LIKE ? OR u.full_name LIKE ? OR u.username LIKE ? OR r.serial_number LIKE ? OR r.project_name LIKE ?)";
+            $search_param = '%' . $search_term . '%';
+            $params[] = $search_param;
+            $params[] = $search_param;
+            $params[] = $search_param;
+            $params[] = $search_param;
+            $params[] = $search_param;
+        }
+        
+        // Step type filter
+        if (!empty($step_filter)) {
+            $where_conditions[] = "ps.step_name = ?";
+            $params[] = $step_filter;
+        }
+        
+        // Rocket filter
+        if (!empty($rocket_filter)) {
+            $where_conditions[] = "ps.rocket_id = ?";
+            $params[] = $rocket_filter;
+        }
+        
+        // Staff filter
+        if (!empty($staff_filter)) {
+            $where_conditions[] = "ps.staff_id = ?";
+            $params[] = $staff_filter;
+        }
+        
+        // Date range filter
+        if (!empty($date_from)) {
+            $where_conditions[] = "DATE(ps.step_timestamp) >= ?";
+            $params[] = $date_from;
+        }
+        
+        if (!empty($date_to)) {
+            $where_conditions[] = "DATE(ps.step_timestamp) <= ?";
+            $params[] = $date_to;
+        }
+        
+        // Build the complete query
+        $sql = "SELECT 
+                    ps.step_id,
+                    ps.rocket_id,
+                    ps.step_name,
+                    ps.data_json,
+                    ps.staff_id,
+                    ps.step_timestamp,
+                    u.full_name as staff_full_name,
+                    u.username as staff_username,
+                    r.serial_number as rocket_serial,
+                    r.project_name as rocket_project
+                FROM production_steps ps
+                INNER JOIN users u ON ps.staff_id = u.user_id
+                INNER JOIN rockets r ON ps.rocket_id = r.rocket_id";
+        
+        if (!empty($where_conditions)) {
+            $sql .= " WHERE " . implode(' AND ', $where_conditions);
+        }
+        
+        // Add sorting
+        $allowed_sort_fields = ['step_timestamp', 'step_name', 'staff_full_name', 'rocket_serial'];
+        $sort_by = in_array($sort_by, $allowed_sort_fields) ? $sort_by : 'step_timestamp';
+        $sort_order = strtoupper($sort_order) === 'ASC' ? 'ASC' : 'DESC';
+        
+        // Map sort field to actual column
+        $sort_field_map = [
+            'step_timestamp' => 'ps.step_timestamp',
+            'step_name' => 'ps.step_name',
+            'staff_full_name' => 'u.full_name',
+            'rocket_serial' => 'r.serial_number'
+        ];
+        
+        $sql .= " ORDER BY " . $sort_field_map[$sort_by] . " " . $sort_order;
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+    } catch (PDOException $e) {
+        error_log("Search production steps error: " . $e->getMessage());
+        return array();
+    }
+}
+
+/**
+ * Get unique step types from production steps
+ * 
+ * @param PDO $pdo Database connection
+ * @return array Array of unique step types
+ */
+function get_production_step_types($pdo) {
+    try {
+        $stmt = $pdo->prepare("SELECT DISTINCT step_name FROM production_steps ORDER BY step_name");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    } catch (PDOException $e) {
+        error_log("Get production step types error: " . $e->getMessage());
+        return array();
+    }
+}
+
+/**
+ * Get rockets that have production steps
+ * 
+ * @param PDO $pdo Database connection
+ * @return array Array of rockets with production steps
+ */
+function get_rockets_with_steps($pdo) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT DISTINCT r.rocket_id, r.serial_number, r.project_name 
+            FROM production_steps ps 
+            INNER JOIN rockets r ON ps.rocket_id = r.rocket_id
+            ORDER BY r.serial_number
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Get rockets with steps error: " . $e->getMessage());
+        return array();
+    }
+}
+
+/**
+ * Get staff members who have recorded production steps
+ * 
+ * @param PDO $pdo Database connection
+ * @return array Array of staff members with production steps
+ */
+function get_staff_with_steps($pdo) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT DISTINCT u.user_id, u.full_name, u.username 
+            FROM production_steps ps 
+            INNER JOIN users u ON ps.staff_id = u.user_id
+            ORDER BY u.full_name
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Get staff with steps error: " . $e->getMessage());
+        return array();
+    }
+}
 ?>

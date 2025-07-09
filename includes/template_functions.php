@@ -555,4 +555,177 @@ function getAllTemplates($pdo) {
     }
 }
 
+/**
+ * Search and filter templates
+ * 
+ * @param PDO $pdo Database connection object
+ * @param string $search_term Search term for step name or description
+ * @param string $status_filter Filter by active status (active, inactive, all)
+ * @param string $creator_filter Filter by creator user ID
+ * @param string $date_from Filter by date from (YYYY-MM-DD)
+ * @param string $date_to Filter by date to (YYYY-MM-DD)
+ * @param string $sort_by Sort field (step_name, created_at, created_by)
+ * @param string $sort_order Sort order (ASC or DESC)
+ * @return array Array of filtered templates
+ */
+function search_templates($pdo, $search_term = '', $status_filter = 'all', $creator_filter = '', $date_from = '', $date_to = '', $sort_by = 'step_name', $sort_order = 'ASC') {
+    try {
+        // Build the WHERE clause
+        $where_conditions = [];
+        $params = [];
+        
+        // Search term for step name or description
+        if (!empty($search_term)) {
+            $where_conditions[] = "(step_name LIKE ? OR step_description LIKE ?)";
+            $search_param = '%' . $search_term . '%';
+            $params[] = $search_param;
+            $params[] = $search_param;
+        }
+        
+        // Status filter
+        if ($status_filter === 'active') {
+            $where_conditions[] = "is_active = 1";
+        } elseif ($status_filter === 'inactive') {
+            $where_conditions[] = "is_active = 0";
+        }
+        // 'all' means no status filter
+        
+        // Creator filter
+        if (!empty($creator_filter)) {
+            $where_conditions[] = "created_by = ?";
+            $params[] = $creator_filter;
+        }
+        
+        // Date range filter
+        if (!empty($date_from)) {
+            $where_conditions[] = "DATE(created_at) >= ?";
+            $params[] = $date_from;
+        }
+        
+        if (!empty($date_to)) {
+            $where_conditions[] = "DATE(created_at) <= ?";
+            $params[] = $date_to;
+        }
+        
+        // Build the complete query
+        $sql = "SELECT st.template_id, st.step_name, st.step_description, st.is_active, st.created_by, st.created_at, u.full_name as creator_name
+                FROM step_templates st
+                LEFT JOIN users u ON st.created_by = u.user_id";
+        
+        if (!empty($where_conditions)) {
+            $sql .= " WHERE " . implode(' AND ', $where_conditions);
+        }
+        
+        // Add sorting
+        $allowed_sort_fields = ['step_name', 'created_at', 'created_by', 'is_active'];
+        $sort_by = in_array($sort_by, $allowed_sort_fields) ? $sort_by : 'step_name';
+        $sort_order = strtoupper($sort_order) === 'DESC' ? 'DESC' : 'ASC';
+        
+        $sql .= " ORDER BY st." . $sort_by . " " . $sort_order;
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $templates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Convert is_active to boolean
+        foreach ($templates as &$template) {
+            $template['is_active'] = (bool) $template['is_active'];
+        }
+        
+        return $templates;
+        
+    } catch (PDOException $e) {
+        error_log("Search templates error: " . $e->getMessage());
+        return array();
+    }
+}
+
+/**
+ * Get unique creators from templates table
+ * 
+ * @param PDO $pdo Database connection object
+ * @return array Array of users who have created templates
+ */
+function get_template_creators($pdo) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT DISTINCT u.user_id, u.full_name, u.username 
+            FROM step_templates st 
+            INNER JOIN users u ON st.created_by = u.user_id 
+            ORDER BY u.full_name
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Get template creators error: " . $e->getMessage());
+        return array();
+    }
+}
+
+/**
+ * Count templates matching search criteria
+ * 
+ * @param PDO $pdo Database connection object
+ * @param string $search_term Search term for step name or description
+ * @param string $status_filter Filter by active status (active, inactive, all)
+ * @param string $creator_filter Filter by creator user ID
+ * @param string $date_from Filter by date from (YYYY-MM-DD)
+ * @param string $date_to Filter by date to (YYYY-MM-DD)
+ * @return int Number of templates matching criteria
+ */
+function count_filtered_templates($pdo, $search_term = '', $status_filter = 'all', $creator_filter = '', $date_from = '', $date_to = '') {
+    try {
+        // Build the WHERE clause
+        $where_conditions = [];
+        $params = [];
+        
+        // Search term for step name or description
+        if (!empty($search_term)) {
+            $where_conditions[] = "(step_name LIKE ? OR step_description LIKE ?)";
+            $search_param = '%' . $search_term . '%';
+            $params[] = $search_param;
+            $params[] = $search_param;
+        }
+        
+        // Status filter
+        if ($status_filter === 'active') {
+            $where_conditions[] = "is_active = 1";
+        } elseif ($status_filter === 'inactive') {
+            $where_conditions[] = "is_active = 0";
+        }
+        
+        // Creator filter
+        if (!empty($creator_filter)) {
+            $where_conditions[] = "created_by = ?";
+            $params[] = $creator_filter;
+        }
+        
+        // Date range filter
+        if (!empty($date_from)) {
+            $where_conditions[] = "DATE(created_at) >= ?";
+            $params[] = $date_from;
+        }
+        
+        if (!empty($date_to)) {
+            $where_conditions[] = "DATE(created_at) <= ?";
+            $params[] = $date_to;
+        }
+        
+        // Build the complete query
+        $sql = "SELECT COUNT(*) FROM step_templates";
+        
+        if (!empty($where_conditions)) {
+            $sql .= " WHERE " . implode(' AND ', $where_conditions);
+        }
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+        
+    } catch (PDOException $e) {
+        error_log("Count filtered templates error: " . $e->getMessage());
+        return 0;
+    }
+}
+
 ?>

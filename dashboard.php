@@ -19,9 +19,26 @@ if (!isset($_SESSION['user_id']) || !is_logged_in()) {
     exit;
 }
 
-// Get all rockets for display
-$rockets = get_all_rockets($pdo);
-$rocket_count = count_rockets($pdo);
+// Get filter parameters
+$search_term = trim($_GET['search'] ?? '');
+$status_filter = trim($_GET['status'] ?? '');
+$date_from = trim($_GET['date_from'] ?? '');
+$date_to = trim($_GET['date_to'] ?? '');
+$sort_by = trim($_GET['sort_by'] ?? 'created_at');
+$sort_order = trim($_GET['sort_order'] ?? 'DESC');
+
+// Get rockets based on filters
+if (!empty($search_term) || !empty($status_filter) || !empty($date_from) || !empty($date_to)) {
+    $rockets = search_rockets($pdo, $search_term, $status_filter, $date_from, $date_to, $sort_by, $sort_order);
+    $filtered_count = count($rockets);
+} else {
+    $rockets = get_all_rockets($pdo);
+    $filtered_count = count($rockets);
+}
+
+// Get total rocket count and available statuses for filters
+$total_rocket_count = count_rockets($pdo);
+$available_statuses = get_rocket_statuses($pdo);
 
 include 'includes/header.php';
 ?>
@@ -102,7 +119,7 @@ include 'includes/header.php';
         <div class="stat-card">
             <div class="stat-icon">🚀</div>
             <div class="stat-content">
-                <div class="stat-number"><?php echo $rocket_count; ?></div>
+                <div class="stat-number"><?php echo $total_rocket_count; ?></div>
                 <div class="stat-label">Total Rockets</div>
             </div>
         </div>
@@ -144,16 +161,109 @@ include 'includes/header.php';
             <div class="card-header">
                 <h2>Rockets Overview</h2>
                 <div class="card-actions">
-                    <span class="card-subtitle"><?php echo count($rockets); ?> rockets in system</span>
+                    <span class="card-subtitle">
+                        <?php if (!empty($search_term) || !empty($status_filter) || !empty($date_from) || !empty($date_to)): ?>
+                            <?php echo $filtered_count; ?> of <?php echo $total_rocket_count; ?> rockets shown
+                        <?php else: ?>
+                            <?php echo count($rockets); ?> rockets in system
+                        <?php endif; ?>
+                    </span>
                 </div>
+            </div>
+
+            <!-- Search and Filter Section -->
+            <div class="filters-section">
+                <form method="GET" class="filters-form">
+                    <div class="filter-row">
+                        <div class="search-group">
+                            <label for="search_input">Search Rockets:</label>
+                            <div class="search-input-group">
+                                <input 
+                                    type="text" 
+                                    id="search_input" 
+                                    name="search" 
+                                    placeholder="Search by serial number or project name..." 
+                                    value="<?php echo htmlspecialchars($search_term); ?>"
+                                >
+                                <button type="submit" class="btn btn-secondary">Search</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="status_filter">Status:</label>
+                            <select id="status_filter" name="status">
+                                <option value="">All Statuses</option>
+                                <?php foreach ($available_statuses as $status): ?>
+                                    <option value="<?php echo htmlspecialchars($status); ?>"
+                                            <?php echo ($status_filter === $status) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($status); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="date_from">Created From:</label>
+                            <input 
+                                type="date" 
+                                id="date_from" 
+                                name="date_from" 
+                                value="<?php echo htmlspecialchars($date_from); ?>"
+                            >
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="date_to">Created To:</label>
+                            <input 
+                                type="date" 
+                                id="date_to" 
+                                name="date_to" 
+                                value="<?php echo htmlspecialchars($date_to); ?>"
+                            >
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="sort_by">Sort By:</label>
+                            <select id="sort_by" name="sort_by">
+                                <option value="created_at" <?php echo ($sort_by === 'created_at') ? 'selected' : ''; ?>>Created Date</option>
+                                <option value="serial_number" <?php echo ($sort_by === 'serial_number') ? 'selected' : ''; ?>>Serial Number</option>
+                                <option value="project_name" <?php echo ($sort_by === 'project_name') ? 'selected' : ''; ?>>Project Name</option>
+                                <option value="current_status" <?php echo ($sort_by === 'current_status') ? 'selected' : ''; ?>>Status</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="sort_order">Order:</label>
+                            <select id="sort_order" name="sort_order">
+                                <option value="DESC" <?php echo ($sort_order === 'DESC') ? 'selected' : ''; ?>>Newest First</option>
+                                <option value="ASC" <?php echo ($sort_order === 'ASC') ? 'selected' : ''; ?>>Oldest First</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-actions">
+                            <button type="submit" class="btn btn-primary">Apply Filters</button>
+                            <?php if (!empty($search_term) || !empty($status_filter) || !empty($date_from) || !empty($date_to) || $sort_by !== 'created_at' || $sort_order !== 'DESC'): ?>
+                                <a href="dashboard.php" class="btn btn-outline">Clear All</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </form>
             </div>
             
             <?php if (empty($rockets)): ?>
                 <div class="empty-state">
                     <div class="empty-state-icon">🚀</div>
-                    <h3>No rockets found</h3>
-                    <p>Get started by adding your first rocket to the system.</p>
-                    <a href="views/rocket_add_view.php" class="btn btn-primary">Add First Rocket</a>
+                    <?php if (!empty($search_term) || !empty($status_filter) || !empty($date_from) || !empty($date_to)): ?>
+                        <h3>No rockets match your filters</h3>
+                        <p>Try adjusting your search criteria or clearing the filters.</p>
+                        <a href="dashboard.php" class="btn btn-secondary">Clear Filters</a>
+                    <?php else: ?>
+                        <h3>No rockets found</h3>
+                        <p>Get started by adding your first rocket to the system.</p>
+                        <a href="views/rocket_add_view.php" class="btn btn-primary">Add First Rocket</a>
+                    <?php endif; ?>
                 </div>
             <?php else: ?>
                 <div class="table-responsive">

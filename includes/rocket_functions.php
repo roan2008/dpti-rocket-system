@@ -315,4 +315,164 @@ function count_rockets($pdo) {
         return 0;
     }
 }
+
+/**
+ * Search and filter rockets
+ * 
+ * @param PDO $pdo Database connection
+ * @param string $search_term Search term for serial number or project name
+ * @param string $status_filter Filter by status
+ * @param string $date_from Filter by date from (YYYY-MM-DD)
+ * @param string $date_to Filter by date to (YYYY-MM-DD)
+ * @param string $sort_by Sort field (serial_number, project_name, current_status, created_at)
+ * @param string $sort_order Sort order (ASC or DESC)
+ * @return array Array of filtered rockets
+ */
+function search_rockets($pdo, $search_term = '', $status_filter = '', $date_from = '', $date_to = '', $sort_by = 'created_at', $sort_order = 'DESC') {
+    try {
+        // Build the WHERE clause
+        $where_conditions = [];
+        $params = [];
+        
+        // Search term for serial number or project name
+        if (!empty($search_term)) {
+            $where_conditions[] = "(serial_number LIKE ? OR project_name LIKE ?)";
+            $search_param = '%' . $search_term . '%';
+            $params[] = $search_param;
+            $params[] = $search_param;
+        }
+        
+        // Status filter
+        if (!empty($status_filter)) {
+            $where_conditions[] = "current_status = ?";
+            $params[] = $status_filter;
+        }
+        
+        // Date range filter
+        if (!empty($date_from)) {
+            $where_conditions[] = "DATE(created_at) >= ?";
+            $params[] = $date_from;
+        }
+        
+        if (!empty($date_to)) {
+            $where_conditions[] = "DATE(created_at) <= ?";
+            $params[] = $date_to;
+        }
+        
+        // Build the complete query
+        $sql = "SELECT rocket_id, serial_number, project_name, current_status, created_at FROM rockets";
+        
+        if (!empty($where_conditions)) {
+            $sql .= " WHERE " . implode(' AND ', $where_conditions);
+        }
+        
+        // Add sorting
+        $allowed_sort_fields = ['serial_number', 'project_name', 'current_status', 'created_at'];
+        $sort_by = in_array($sort_by, $allowed_sort_fields) ? $sort_by : 'created_at';
+        $sort_order = strtoupper($sort_order) === 'ASC' ? 'ASC' : 'DESC';
+        
+        $sql .= " ORDER BY " . $sort_by . " " . $sort_order;
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+    } catch (PDOException $e) {
+        error_log("Search rockets error: " . $e->getMessage());
+        return array();
+    }
+}
+
+/**
+ * Get rockets by status
+ * 
+ * @param PDO $pdo Database connection
+ * @param string $status Status to filter by
+ * @return array Array of rockets with specified status
+ */
+function get_rockets_by_status($pdo, $status) {
+    try {
+        $stmt = $pdo->prepare("SELECT rocket_id, serial_number, project_name, current_status, created_at FROM rockets WHERE current_status = ? ORDER BY created_at DESC");
+        $stmt->execute([$status]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Get rockets by status error: " . $e->getMessage());
+        return array();
+    }
+}
+
+/**
+ * Get unique statuses from rockets table
+ * 
+ * @param PDO $pdo Database connection
+ * @return array Array of unique status values
+ */
+function get_rocket_statuses($pdo) {
+    try {
+        $stmt = $pdo->prepare("SELECT DISTINCT current_status FROM rockets ORDER BY current_status");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    } catch (PDOException $e) {
+        error_log("Get rocket statuses error: " . $e->getMessage());
+        return array();
+    }
+}
+
+/**
+ * Count rockets matching search criteria
+ * 
+ * @param PDO $pdo Database connection
+ * @param string $search_term Search term for serial number or project name
+ * @param string $status_filter Filter by status
+ * @param string $date_from Filter by date from (YYYY-MM-DD)
+ * @param string $date_to Filter by date to (YYYY-MM-DD)
+ * @return int Number of rockets matching criteria
+ */
+function count_filtered_rockets($pdo, $search_term = '', $status_filter = '', $date_from = '', $date_to = '') {
+    try {
+        // Build the WHERE clause
+        $where_conditions = [];
+        $params = [];
+        
+        // Search term for serial number or project name
+        if (!empty($search_term)) {
+            $where_conditions[] = "(serial_number LIKE ? OR project_name LIKE ?)";
+            $search_param = '%' . $search_term . '%';
+            $params[] = $search_param;
+            $params[] = $search_param;
+        }
+        
+        // Status filter
+        if (!empty($status_filter)) {
+            $where_conditions[] = "current_status = ?";
+            $params[] = $status_filter;
+        }
+        
+        // Date range filter
+        if (!empty($date_from)) {
+            $where_conditions[] = "DATE(created_at) >= ?";
+            $params[] = $date_from;
+        }
+        
+        if (!empty($date_to)) {
+            $where_conditions[] = "DATE(created_at) <= ?";
+            $params[] = $date_to;
+        }
+        
+        // Build the complete query
+        $sql = "SELECT COUNT(*) FROM rockets";
+        
+        if (!empty($where_conditions)) {
+            $sql .= " WHERE " . implode(' AND ', $where_conditions);
+        }
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+        
+    } catch (PDOException $e) {
+        error_log("Count filtered rockets error: " . $e->getMessage());
+        return 0;
+    }
+}
 ?>
