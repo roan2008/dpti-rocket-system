@@ -5,6 +5,44 @@
  */
 
 /**
+ * Get all active step template names for Motor Charging Report requirements
+ * 
+ * @param PDO $pdo Database connection
+ * @return array Array of step names from active templates
+ */
+function getMandatoryStepsFromTemplates($pdo) {
+    try {
+        $query = $pdo->prepare("
+            SELECT step_name 
+            FROM step_templates 
+            WHERE is_active = 1 
+            ORDER BY step_name
+        ");
+        $query->execute();
+        
+        $steps = [];
+        while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
+            $steps[] = $row['step_name'];
+        }
+        
+        error_log("Motor Charging Report: Found " . count($steps) . " mandatory steps from templates: " . implode(', ', $steps));
+        return $steps;
+        
+    } catch (PDOException $e) {
+        error_log("Error getting mandatory steps from templates: " . $e->getMessage());
+        // Fallback to hardcoded steps if database query fails
+        return [
+            'Motor Casing Preparation',
+            'Propellant Mixing',
+            'Propellant Loading',
+            'Nozzle Installation',
+            'Quality Control Inspection',
+            'Final Assembly'
+        ];
+    }
+}
+
+/**
  * CRITICAL BUSINESS RULE: Motor Charging Report Gatekeeper Function
  * 
  * This function ensures that a Motor Charging Report can only be generated
@@ -16,17 +54,6 @@
  */
 function canGenerateMotorChargingReport($pdo, $rocket_id) {
     try {
-        // Define MANDATORY steps required for Motor Charging Report
-        // These steps MUST exist and be approved before report generation
-        $mandatory_steps = [
-            'Motor Casing Preparation',
-            'Propellant Mixing',
-            'Propellant Loading',
-            'Nozzle Installation',
-            'Quality Control Inspection',
-            'Final Assembly'
-        ];
-        
         // Check if rocket exists
         $rocket_check = $pdo->prepare("SELECT rocket_id FROM rockets WHERE rocket_id = ?");
         $rocket_check->execute([$rocket_id]);
@@ -35,46 +62,23 @@ function canGenerateMotorChargingReport($pdo, $rocket_id) {
             return false;
         }
         
-        // For each mandatory step, verify:
-        // 1. The step exists in production_steps for this rocket
-        // 2. The step has been approved in the approvals table
-        foreach ($mandatory_steps as $step_name) {
-            
-            // Check if production step exists
-            $step_query = $pdo->prepare("
-                SELECT step_id 
-                FROM production_steps 
-                WHERE rocket_id = ? AND step_name = ?
-                ORDER BY step_timestamp DESC 
-                LIMIT 1
-            ");
-            $step_query->execute([$rocket_id, $step_name]);
-            $step = $step_query->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$step) {
-                error_log("Motor Charging Report: Missing required step '$step_name' for rocket $rocket_id");
-                return false;
-            }
-            
-            // Check if this step has been approved
-            $approval_query = $pdo->prepare("
-                SELECT approval_id 
-                FROM approvals 
-                WHERE step_id = ? AND status = 'approved'
-                ORDER BY approval_timestamp DESC 
-                LIMIT 1
-            ");
-            $approval_query->execute([$step['step_id']]);
-            $approval = $approval_query->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$approval) {
-                error_log("Motor Charging Report: Step '$step_name' (ID: {$step['step_id']}) not approved for rocket $rocket_id");
-                return false;
-            }
+        // Check if rocket has ANY production steps
+        // Motor Charging Report shows whatever steps have been done, not enforce specific requirements
+        $steps_query = $pdo->prepare("
+            SELECT COUNT(*) as step_count 
+            FROM production_steps 
+            WHERE rocket_id = ?
+        ");
+        $steps_query->execute([$rocket_id]);
+        $result = $steps_query->fetch(PDO::FETCH_ASSOC);
+        
+        if ($result['step_count'] == 0) {
+            error_log("Motor Charging Report: No production steps found for rocket $rocket_id");
+            return false;
         }
         
-        // All mandatory steps exist and are approved
-        error_log("Motor Charging Report: All requirements met for rocket $rocket_id");
+        // Has production steps - ready to generate report
+        error_log("Motor Charging Report: Found {$result['step_count']} production steps for rocket $rocket_id - ready to print");
         return true;
         
     } catch (PDOException $e) {
