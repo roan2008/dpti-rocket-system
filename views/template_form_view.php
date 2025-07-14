@@ -227,8 +227,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Load existing fields if in edit mode
+    console.log('Debug: Edit mode check');
+    console.log('Edit mode:', <?php echo $edit_mode ? 'true' : 'false'; ?>);
+    console.log('Template fields count:', <?php echo !empty($template['fields']) ? count($template['fields']) : 0; ?>);
+    
     <?php if ($edit_mode && !empty($template['fields'])): ?>
-        loadExistingFields();
+        console.log('Debug: About to call loadExistingFields()');
+        // Add small delay to ensure DOM is ready
+        setTimeout(function() {
+            console.log('Debug: DOM ready, calling loadExistingFields()');
+            loadExistingFields();
+        }, 100);
+    <?php else: ?>
+        console.log('Debug: Not loading existing fields - edit_mode:', <?php echo $edit_mode ? 'true' : 'false'; ?>, 'fields_empty:', <?php echo empty($template['fields']) ? 'true' : 'false'; ?>);
     <?php endif; ?>
 });
 
