@@ -240,14 +240,26 @@ include '../includes/header.php';
 
     <div class="approvals-content">
         <div class="approvals-summary">
-            <h3>Pending Approvals</h3>
-            <p class="approvals-count">
-                <?php if (!empty($search_term) || !empty($step_filter) || !empty($rocket_filter) || !empty($staff_filter) || !empty($date_from) || !empty($date_to)): ?>
-                    <?php echo $filtered_count; ?> of <?php echo $approval_stats['pending_count']; ?> pending approvals shown
-                <?php else: ?>
-                    <?php echo count($pending_approvals); ?> pending approvals
-                <?php endif; ?>
-            </p>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3>Pending Approvals</h3>
+                    <p class="approvals-count">
+                        <?php if (!empty($search_term) || !empty($step_filter) || !empty($rocket_filter) || !empty($staff_filter) || !empty($date_from) || !empty($date_to)): ?>
+                            <?php echo $filtered_count; ?> of <?php echo $approval_stats['pending_count']; ?> pending approvals shown
+                        <?php else: ?>
+                            <?php echo count($pending_approvals); ?> pending approvals
+                        <?php endif; ?>
+                    </p>
+                </div>
+                <div>
+                    <a href="approval_controller.php?action=list_history" class="btn btn-outline-info">
+                        <i class="fas fa-history"></i> View History
+                    </a>
+                    <a href="../dashboard.php" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Dashboard
+                    </a>
+                </div>
+            </div>
         </div>
         
         <?php if (empty($pending_approvals)): ?>

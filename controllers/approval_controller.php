@@ -33,6 +33,9 @@ switch ($action) {
     case 'list_pending':
         handle_list_pending();
         break;
+    case 'list_history':
+        handle_list_history();
+        break;
     case 'submit_approval':
         handle_submit_approval();
         break;
@@ -64,6 +67,29 @@ function handle_list_pending() {
     } catch (Exception $e) {
         error_log("Error loading pending approvals: " . $e->getMessage());
         header('Location: ../dashboard.php?error=approval_load_failed');
+        exit;
+    }
+}
+
+/**
+ * Handle listing all approval history
+ */
+function handle_list_history() {
+    global $pdo;
+    
+    try {
+        // Get all approval history
+        $all_history = getAllApprovalHistory($pdo);
+        
+        // Get approval statistics for dashboard info
+        $approval_stats = getApprovalStatistics($pdo);
+        
+        // Include the approval history view
+        include '../views/approval_history_list_view.php';
+        
+    } catch (Exception $e) {
+        error_log("Error loading approval history: " . $e->getMessage());
+        header('Location: ../dashboard.php?error=history_load_failed');
         exit;
     }
 }

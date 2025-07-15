@@ -413,4 +413,48 @@ function get_staff_with_pending_approvals($pdo) {
         return array();
     }
 }
+
+/**
+ * Get all approval history across all production steps
+ * Returns comprehensive list of all approvals with related information
+ * 
+ * @param PDO $pdo Database connection
+ * @return array Array of approval records with step and rocket information
+ */
+function getAllApprovalHistory($pdo) {
+    try {
+        $sql = "
+            SELECT 
+                a.approval_id,
+                a.step_id,
+                a.engineer_id,
+                a.status,
+                a.comments,
+                a.approval_timestamp,
+                ps.step_name,
+                ps.step_timestamp,
+                ps.data_json,
+                r.rocket_id,
+                r.serial_number,
+                r.project_name,
+                r.current_status,
+                e.full_name as engineer_name,
+                s.full_name as staff_name
+            FROM approvals a
+            INNER JOIN production_steps ps ON a.step_id = ps.step_id
+            INNER JOIN rockets r ON ps.rocket_id = r.rocket_id
+            INNER JOIN users e ON a.engineer_id = e.user_id
+            INNER JOIN users s ON ps.staff_id = s.user_id
+            ORDER BY a.approval_timestamp DESC, r.serial_number ASC
+        ";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log("Get all approval history error: " . $e->getMessage());
+        return array();
+    }
+}
 ?>
