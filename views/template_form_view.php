@@ -520,7 +520,11 @@ function loadExistingFields() {
         }
         fieldsContainer.classList.add('has-fields');
         
-        <?php foreach ($template['fields'] as $field): ?>
+        // Get fields data as JSON to avoid JavaScript variable conflicts
+        const existingFields = <?php echo json_encode($template['fields']); ?>;
+        
+        // Use JavaScript forEach instead of PHP foreach to avoid const redeclaration
+        existingFields.forEach(function(field) {
             fieldCounter++;
             const fieldRow = document.createElement('div');
             fieldRow.className = 'field-row';
@@ -543,7 +547,7 @@ function loadExistingFields() {
                         <input 
                             type="text" 
                             name="field_label_${fieldCounter}" 
-                            value="<?php echo htmlspecialchars($field['field_label']); ?>"
+                            value="${escapeHtml(field.field_label)}"
                             required
                         >
                     </div>
@@ -553,7 +557,7 @@ function loadExistingFields() {
                         <input 
                             type="text" 
                             name="field_name_${fieldCounter}" 
-                            value="<?php echo htmlspecialchars($field['field_name']); ?>"
+                            value="${escapeHtml(field.field_name)}"
                             pattern="[a-z_][a-z0-9_]*"
                             data-manually-edited="true"
                             required
@@ -564,29 +568,29 @@ function loadExistingFields() {
                         <label>Field Type <span style="color: #dc3545;">*</span></label>
                         <select name="field_type_${fieldCounter}" class="field-type-select" data-field-id="${fieldCounter}" required>
                             <option value="">Select type...</option>
-                            <option value="text" <?php echo $field['field_type'] === 'text' ? 'selected' : ''; ?>>Text Input</option>
-                            <option value="number" <?php echo $field['field_type'] === 'number' ? 'selected' : ''; ?>>Number Input</option>
-                            <option value="textarea" <?php echo $field['field_type'] === 'textarea' ? 'selected' : ''; ?>>Text Area</option>
-                            <option value="select" <?php echo $field['field_type'] === 'select' ? 'selected' : ''; ?>>Dropdown Select</option>
-                            <option value="date" <?php echo $field['field_type'] === 'date' ? 'selected' : ''; ?>>Date Input</option>
+                            <option value="text" ${field.field_type === 'text' ? 'selected' : ''}>Text Input</option>
+                            <option value="number" ${field.field_type === 'number' ? 'selected' : ''}>Number Input</option>
+                            <option value="textarea" ${field.field_type === 'textarea' ? 'selected' : ''}>Text Area</option>
+                            <option value="select" ${field.field_type === 'select' ? 'selected' : ''}>Dropdown Select</option>
+                            <option value="date" ${field.field_type === 'date' ? 'selected' : ''}>Date Input</option>
                         </select>
                     </div>
                     
                     <div class="field-input-group">
                         <div class="checkbox-wrapper">
-                            <input type="checkbox" name="is_required_${fieldCounter}" id="required_${fieldCounter}" <?php echo $field['is_required'] ? 'checked' : ''; ?>>
+                            <input type="checkbox" name="is_required_${fieldCounter}" id="required_${fieldCounter}" ${field.is_required ? 'checked' : ''}>
                             <label for="required_${fieldCounter}">Required field</label>
                         </div>
                     </div>
                     
                     <div class="field-input-group full-width">
-                        <div class="options-json-group <?php echo $field['field_type'] !== 'select' ? 'hidden' : ''; ?>" id="options_group_${fieldCounter}">
+                        <div class="options-json-group ${field.field_type !== 'select' ? 'hidden' : ''}" id="options_group_${fieldCounter}">
                             <label>Dropdown Options <span style="color: #dc3545;">*</span></label>
                             <textarea 
                                 name="options_json_${fieldCounter}" 
                                 rows="3"
-                                <?php echo $field['field_type'] === 'select' ? 'required' : ''; ?>
-                            ><?php echo $field['field_type'] === 'select' ? htmlspecialchars($field['options_json']) : ''; ?></textarea>
+                                ${field.field_type === 'select' ? 'required' : ''}
+                            >${field.field_type === 'select' ? escapeHtml(field.options_json || '') : ''}</textarea>
                             <div class="help-text">
                                 Enter options as a JSON array. Example: ["Pass", "Fail", "Needs Review"]
                             </div>
@@ -596,15 +600,25 @@ function loadExistingFields() {
             `;
             
             fieldsContainer.appendChild(fieldRow);
-        <?php endforeach; ?>
+            
+            // Apply toggleOptionsField for this specific field
+            toggleOptionsField(fieldCounter);
+        });
         
-        // Apply toggleOptionsField to all loaded fields
-        <?php foreach ($template['fields'] as $index => $field): ?>
-            toggleOptionsField(<?php echo $index + 1; ?>);
-        <?php endforeach; ?>
-        
-        console.log('Loaded <?php echo count($template['fields']); ?> existing fields');
+        console.log('Loaded ' + existingFields.length + ' existing fields');
     <?php endif; ?>
+}
+
+// Helper function to escape HTML in JavaScript
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text ? text.replace(/[&<>"']/g, function(m) { return map[m]; }) : '';
 }
 </script>
 

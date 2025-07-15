@@ -460,9 +460,11 @@ function updateTemplate($pdo, $template_id, $step_name, $step_description) {
     try {
         $sql = "UPDATE step_templates SET step_name = ?, step_description = ? WHERE template_id = ?";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$step_name, $step_description, $template_id]);
+        $result = $stmt->execute([$step_name, $step_description, $template_id]);
         
-        return $stmt->rowCount() > 0;
+        // Return true if the query executed successfully, regardless of whether rows were affected
+        // (No changes needed if data is the same)
+        return $result;
         
     } catch (PDOException $e) {
         error_log("Error in updateTemplate(): " . $e->getMessage());

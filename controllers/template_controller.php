@@ -140,7 +140,7 @@ function handle_save_template() {
     
     // Validate required fields
     if (empty($step_name)) {
-        redirect_with_save_error('missing_fields', $step_name, $step_description);
+        redirect_with_save_error('missing_fields', $step_name, $step_description, $template_id);
         return;
     }
     
@@ -160,7 +160,7 @@ function handle_save_template() {
     
     // Check if template name already exists (excluding current template if updating)
     if (templateNameExists($pdo, $step_name, $is_update ? $template_id : null)) {
-        redirect_with_save_error('template_exists', $step_name, $step_description);
+        redirect_with_save_error('template_exists', $step_name, $step_description, $template_id);
         return;
     }
     
@@ -170,7 +170,7 @@ function handle_save_template() {
         $fields_data = json_decode($fields_data_json, true);
         
         if (json_last_error() !== JSON_ERROR_NONE || !is_array($fields_data)) {
-            redirect_with_save_error('invalid_fields_data', $step_name, $step_description);
+            redirect_with_save_error('invalid_fields_data', $step_name, $step_description, $template_id);
             return;
         }
         
@@ -179,7 +179,7 @@ function handle_save_template() {
             $validation = validateTemplateField($field);
             if (!$validation['valid']) {
                 error_log("Field validation failed for field #" . ($index + 1) . ": " . implode(', ', $validation['errors']));
-                redirect_with_save_error('invalid_fields_data', $step_name, $step_description);
+                redirect_with_save_error('invalid_fields_data', $step_name, $step_description, $template_id);
                 return;
             }
         }
@@ -253,7 +253,7 @@ function handle_save_template() {
         error_log("Error saving template: " . $e->getMessage());
         
         // Redirect with error
-        redirect_with_save_error('save_failed', $step_name, $step_description);
+        redirect_with_save_error('save_failed', $step_name, $step_description, $template_id);
         return;
     }
 }
@@ -414,14 +414,20 @@ function redirect_with_error($error, $step_name = '', $step_description = '') {
 /**
  * Helper function to redirect with error and preserve form data for save operations
  */
-function redirect_with_save_error($error, $step_name = '', $step_description = '') {
-    $params = http_build_query([
+function redirect_with_save_error($error, $step_name = '', $step_description = '', $template_id = null) {
+    $params = [
         'error' => $error,
         'step_name' => $step_name,
         'step_description' => $step_description
-    ]);
+    ];
     
-    header('Location: ../views/template_form_view.php?' . $params);
+    // Include template_id if this is an update operation
+    if ($template_id) {
+        $params['id'] = $template_id;
+    }
+    
+    $query_string = http_build_query($params);
+    header('Location: ../views/template_form_view.php?' . $query_string);
     exit;
 }
 
