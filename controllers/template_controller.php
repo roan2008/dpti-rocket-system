@@ -241,8 +241,13 @@ function handle_save_template() {
         error_log("Template saved successfully: $action_type, ID: $final_template_id, Name: $step_name, Fields: " . count($fields_data));
         
         // Redirect with success
-        $success_message = $is_update ? 'template_updated' : 'template_created';
-        header('Location: ../views/templates_list_view.php?success=' . $success_message . '&template_id=' . $final_template_id);
+        if ($is_update) {
+            // For updates, go back to the edit form with success message
+            header('Location: ../views/template_form_view.php?id=' . $final_template_id . '&success=template_updated');
+        } else {
+            // For new templates, go to the list view
+            header('Location: ../views/templates_list_view.php?success=template_created&template_id=' . $final_template_id);
+        }
         exit;
         
     } catch (Exception $e) {
