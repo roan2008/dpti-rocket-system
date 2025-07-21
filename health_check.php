@@ -85,13 +85,13 @@ if (!$is_db_config_ok) {
 require_once $db_connect_path;
 $pdo = null;
 try {
-    $dsn = "mysql:host=" . DB_SERVER . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+    $dsn = "mysql:host=$host;dbname=$dbname;charset=utf8mb4";
     $options = [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES   => false,
     ];
-    $pdo = new PDO($dsn, DB_USERNAME, DB_PASSWORD, $options);
+    $pdo = new PDO($dsn, $username, $password, $options);
     print_status("Attempting database connection", true);
 } catch (PDOException $e) {
     print_status("Attempting database connection", false);
